@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -25,6 +27,16 @@ const mockLibrary = {
 };
 
 // --- API Endpoints ---
+
+app.get('/', (req, res) => {
+    try {
+        const htmlPath = path.join(process.cwd(), 'index.html');
+        const html = fs.readFileSync(htmlPath, 'utf8');
+        res.send(html);
+    } catch (err) {
+        res.status(500).send("Critical Error: index.html not found in root. Please ensure index.html exists in the project root.");
+    }
+});
 
 app.post('/api/generate-roadmap', async (req, res) => {
     const { role } = req.body;
