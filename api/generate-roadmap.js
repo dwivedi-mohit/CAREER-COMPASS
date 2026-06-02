@@ -4,24 +4,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/generate-roadmap', async (req, res) => {
+app.post('/', async (req, res) => {
     const { role } = req.body;
     const groqKey = process.env.GROQ_API_KEY;
     
-    if (!groqKey) return res.status(500).json({ error: "Missing API Key" });
+    if (!groqKey) return res.status(500).json({ error: 'Missing API Key' });
 
     try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
             headers: {
-                "Authorization": `Bearer ${groqKey}`,
-                "Content-Type": "application/json"
+                Authorization: `Bearer ${groqKey}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: 'llama-3.3-70b-versatile',
                 messages: [
                     {
-                        role: "system",
+                        role: 'system',
                         content: `You are a world-class career architect. Generate a "roadmap.sh" style learning path as a JSON object. 
                         The structure should be:
                         {
@@ -37,11 +37,11 @@ app.post('/api/generate-roadmap', async (req, res) => {
                         Return ONLY the JSON. No other text.`
                     },
                     {
-                        role: "user",
+                        role: 'user',
                         content: `Create a roadmap for a "${role}".`
                     }
                 ],
-                response_format: { type: "json_object" }
+                response_format: { type: 'json_object' }
             })
         });
 
