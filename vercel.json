@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/generate-roadmap.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/tutor-query.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     { "source": "/api/generate-roadmap", "destination": "/api/generate-roadmap" },
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/api/tutor-query", "destination": "/api/tutor-query" },
+    { "source": "/", "destination": "/api" }
   ]
 }
 
