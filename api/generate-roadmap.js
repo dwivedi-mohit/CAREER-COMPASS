@@ -1,10 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const app = express();
-app.use(cors());
-app.use(express.json());
+module.exports = async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+    
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-app.post('/', async (req, res) => {
     const { role } = req.body;
     const groqKey = process.env.GROQ_API_KEY;
     
@@ -46,10 +47,8 @@ app.post('/', async (req, res) => {
         });
 
         const data = await response.json();
-        res.json(JSON.parse(data.choices[0].message.content));
+        res.status(200).json(JSON.parse(data.choices[0].message.content));
     } catch (error) {
         res.status(500).json({ error: true, message: error.message });
     }
-});
-
-module.exports = app;
+};

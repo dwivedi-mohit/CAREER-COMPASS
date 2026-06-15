@@ -1,9 +1,10 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/generate-roadmap", "destination": "/api/generate-roadmap" },
-    { "source": "/api/tutor-query", "destination": "/api/tutor-query" },
-    { "source": "/", "destination": "/api" }
+    {
+      "source": "/",
+      "destination": "/api/index"
+    }
   ]
 }
 
