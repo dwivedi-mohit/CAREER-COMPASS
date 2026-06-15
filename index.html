@@ -6,6 +6,7 @@
     <title>AjayPath AI - Career Workstation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
@@ -175,6 +176,61 @@
             min-height: 800px;
             position: relative;
         }
+        html.dark body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        html.dark header {
+            background-color: #0f172a;
+            border-bottom-color: #1e293b;
+            color: #e2e8f0;
+        }
+        html.dark .topic-box {
+            background: #1e293b;
+            border-color: #cbd5e1;
+            color: #e2e8f0;
+        }
+        html.dark .topic-box:hover {
+            background: #334155;
+        }
+        html.dark .topic-box.completed {
+            background: #064e3b;
+            border-color: #34d399;
+        }
+        html.dark .subtopic-box {
+            background: #1e293b;
+            border-color: #94a3b8;
+            color: #e2e8f0;
+        }
+        html.dark .subtopic-box:hover {
+            background: #334155;
+        }
+        html.dark .sidebar {
+            background: #0f172a;
+            border-left-color: #1e293b;
+            color: #e2e8f0;
+        }
+        html.dark .bg-white {
+            background: #0f172a !important;
+        }
+        html.dark .bg-gray-50 {
+            background: #1e293b !important;
+        }
+        html.dark .border-black {
+            border-color: #334155 !important;
+        }
+        html.dark .text-blue-600 {
+            color: #60a5fa !important;
+        }
+        html.dark .text-gray-500 {
+            color: #94a3b8 !important;
+        }
+        html.dark .shadow-\[6px_6px_0px_\#000\] {
+            box-shadow: 6px 6px 0px #1e293b !important;
+        }
+        html.dark .shadow-\[20px_20px_0px_\#000\] {
+            box-shadow: 20px 20px 0px #1e293b !important;
+        }
     </style>
 </head>
 <body>
@@ -192,6 +248,9 @@
             </button>
             <button onclick="toggleCollections()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
                 <span class="material-symbols-outlined text-xl">library_books</span> COLLECTION
+            </button>
+            <button id="darkModeToggle" onclick="toggleDarkMode()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
+                <span id="darkModeIcon" class="material-symbols-outlined text-xl">dark_mode</span>
             </button>
         </div>
     </header>
@@ -482,13 +541,25 @@
 
     <!-- ROADMAP RESULT VIEW (Separate View) -->
     <div id="roadmapView" class="hidden px-10 py-24 max-w-[1800px] mx-auto">
-        <div class="flex justify-between items-center mb-16 pb-10 border-b-8 border-black">
+        <div class="flex justify-between items-center mb-6 pb-6 border-b-8 border-black">
             <button onclick="backToLibrary()" class="flex items-center gap-3 px-8 py-4 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1">
                 <span class="material-symbols-outlined">arrow_back</span> BACK TO LIBRARY
             </button>
             <div class="flex gap-4">
+                <button onclick="exportRoadmapPDF()" class="px-8 py-4 bg-red-500 text-white border-4 border-black rounded-2xl font-black hover:bg-red-600 shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1 transition-all uppercase">Export PDF</button>
+                <button onclick="exportRoadmapNotion()" class="px-8 py-4 bg-gray-800 text-white border-4 border-black rounded-2xl font-black hover:bg-gray-900 shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1 transition-all uppercase">Export to Notion</button>
                 <button id="downloadBtn" class="px-8 py-4 bg-green-500 text-white border-4 border-black rounded-2xl font-black hover:bg-green-600 shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1 transition-all uppercase">Save Image</button>
             </div>
+        </div>
+        <div id="progressCard" class="hidden mb-12 p-8 bg-white border-8 border-black rounded-[40px] shadow-[15px_15px_0px_#000]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-3xl font-black uppercase tracking-tighter">Mastery Progress</h3>
+                <span id="progressPercent" class="text-4xl font-black text-blue-600">0%</span>
+            </div>
+            <div class="w-full h-6 bg-gray-200 border-4 border-black rounded-full overflow-hidden mb-8">
+                <div id="progressBar" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div id="phaseList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
         <div id="roadmapContent" class="roadmap-canvas"></div>
     </div>
@@ -546,6 +617,47 @@
                     </h4>
                     <div id="vaultList" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                         <p class="text-gray-400 font-bold italic py-10 text-center">Your knowledge archive is empty.</p>
+                    </div>
+                </div>
+
+                <!-- Flashcards & Quizzes -->
+                <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                    <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
+                        <span class="material-symbols-outlined text-3xl">style</span> Flashcards &amp; Quizzes
+                    </h4>
+                    <div class="space-y-4">
+                        <input id="flashcardsTopicInput" type="text" placeholder="Topic or skill (e.g. JavaScript, React)" class="w-full p-4 border-4 border-black rounded-2xl font-bold outline-none focus:ring-4 ring-blue-100">
+                        <div class="flex gap-3">
+                            <button onclick="generateFlashcards()" class="flex-1 py-4 bg-yellow-400 border-4 border-black rounded-2xl font-black uppercase hover:bg-yellow-300 shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1 transition-all">Generate Flashcards</button>
+                            <button onclick="startQuiz()" class="flex-1 py-4 bg-purple-500 text-white border-4 border-black rounded-2xl font-black uppercase hover:bg-purple-600 shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1 transition-all">Start Quiz</button>
+                        </div>
+                        <div id="flashcardsOutput" class="min-h-[120px] p-4 bg-gray-50 border-4 border-black rounded-2xl text-sm font-bold"></div>
+                    </div>
+                </div>
+
+                <!-- Interview Simulator -->
+                <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                    <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
+                        <span class="material-symbols-outlined text-3xl">record_voice_over</span> Interview Simulator
+                    </h4>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input id="interviewRoleInput" type="text" placeholder="Role" class="p-3 border-4 border-black rounded-2xl font-bold outline-none">
+                            <input id="interviewTopicInput" type="text" placeholder="Topic" class="p-3 border-4 border-black rounded-2xl font-bold outline-none">
+                        </div>
+                        <div class="flex gap-3">
+                            <select id="interviewDifficulty" class="p-3 border-4 border-black rounded-2xl font-bold bg-white">
+                                <option value="easy">Easy</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                            <button onclick="startInterview()" class="flex-1 py-3 bg-red-500 text-white border-4 border-black rounded-2xl font-black uppercase hover:bg-red-600 shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1 transition-all">Start</button>
+                        </div>
+                        <div id="interviewOutput" class="min-h-[100px] p-4 bg-gray-50 border-4 border-black rounded-2xl text-sm font-bold"></div>
+                        <div class="flex gap-3">
+                            <input id="interviewAnswerInput" type="text" placeholder="Your answer..." class="flex-grow p-3 border-4 border-black rounded-2xl font-bold outline-none">
+                            <button onclick="submitInterviewAnswer()" class="px-6 py-3 bg-black text-white border-4 border-black rounded-2xl font-black uppercase">Submit</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -723,27 +835,33 @@
                 
                 const isCompleted = localStorage.getItem(`pf_v1_${currentRole}_phase_${i}`) === 'true';
                 
-                node.innerHTML = `
-                    <div class="w-1/2 flex ${isEven ? 'justify-end pr-20' : 'justify-start pl-20'}">
-                        <div class="topic-box ${isCompleted ? 'completed' : ''}" onclick="openTopic('${phase.title}', ${i})">
-                            <div class="flex items-center gap-4">
-                                <span class="text-xs bg-black text-white px-2 py-1 rounded">PHASE ${i+1}</span>
-                                <span>${phase.title}</span>
-                                ${isCompleted ? '<span class="material-symbols-outlined text-green-500">check_circle</span>' : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="w-0 relative">
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black border-4 border-blue-600 rounded-full z-20 shadow-[0_0_20px_rgba(37,99,235,0.4)]"></div>
-                    </div>
-                    <div class="w-1/2 ${isEven ? 'pl-20' : 'pr-20'} flex flex-wrap gap-4 ${isEven ? 'justify-start' : 'justify-end'}">
-                        ${phase.subtopics.map(st => `<div class="subtopic-box" onclick="askTutorAbout('${st}')">${st}</div>`).join('')}
-                    </div>
-                `;
-                nodes.appendChild(node);
-            });
-            updateMasteryAnalytics();
-        }
+node.innerHTML = `
+                     <div class="w-1/2 flex ${isEven ? 'justify-end pr-20' : 'justify-start pl-20'}">
+                         <div class="topic-box ${isCompleted ? 'completed' : ''}">
+                             <div class="flex items-center gap-4">
+                                 <span class="text-xs bg-black text-white px-2 py-1 rounded">PHASE ${i+1}</span>
+                                 <span>${escapeHTML(phase.title)}</span>
+                                 ${isCompleted ? '<span class="material-symbols-outlined text-green-500">check_circle</span>' : ''}
+                             </div>
+                         </div>
+                     </div>
+                     <div class="w-0 relative">
+                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black border-4 border-blue-600 rounded-full z-20 shadow-[0_0_20px_rgba(37,99,235,0.4)]"></div>
+                     </div>
+                     <div class="w-1/2 ${isEven ? 'pl-20' : 'pr-20'} flex flex-wrap gap-4 ${isEven ? 'justify-start' : 'justify-end'}">
+                         ${phase.subtopics.map(st => `<div class="subtopic-box">${escapeHTML(st)}</div>`).join('')}
+                     </div>
+                 `;
+                 nodes.appendChild(node);
+                 node.querySelector('.topic-box').addEventListener('click', () => openTopic(phase.title, i));
+                 node.querySelectorAll('.subtopic-box').forEach(btn => {
+                     const st = btn.innerText;
+                     btn.addEventListener('click', () => askTutorAbout(st));
+                 });
+             });
+             updateMasteryAnalytics();
+             updateProgressUI();
+         }
 
         // --- Feature Interactions ---
         function openTopic(title, index) {
@@ -982,6 +1100,7 @@
                 masteryVal.innerText = `${percent}%`;
                 masteryBar.style.width = `${percent}%`;
             }
+            if(currentPathData) updateProgressUI();
         }
 
         // --- Widget Controls ---
@@ -1013,10 +1132,235 @@
             }
         }
 
+        // --- Helpers ---
+        function escapeHTML(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function downloadTextFile(filename, text) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard');
+            });
+        }
+        function generateNotionMarkdown(data) {
+            const lines = [`# ${currentRole || 'Roadmap'}`, '', '## Phases'];
+            data.phases.forEach((p, i) => {
+                lines.push(`\n### Phase ${i + 1}: ${p.title}`);
+                (p.subtopics || []).forEach(st => lines.push(`- ${st}`));
+            });
+            return lines.join('\n');
+        }
+
+        // --- Dark Mode ---
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('pf_theme', isDark ? 'dark' : 'light');
+            const icon = document.getElementById('darkModeIcon');
+            if(icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+        }
+
+        // --- Progress Tracking ---
+        function togglePhaseCompletion(index) {
+            const key = `pf_v1_${currentRole}_phase_${index}`;
+            const next = localStorage.getItem(key) !== 'true';
+            localStorage.setItem(key, next ? 'true' : 'false');
+            updateProgressUI();
+            if(currentPathData) renderRoadmap(currentPathData);
+            updateMasteryAnalytics();
+        }
+
+        function updateProgressUI() {
+            const card = document.getElementById('progressCard');
+            if(!card || !currentPathData) return;
+            card.classList.remove('hidden');
+            const phases = currentPathData.phases || [];
+            let done = 0;
+            phases.forEach((_, i) => {
+                if(localStorage.getItem(`pf_v1_${currentRole}_phase_${i}`) === 'true') done++;
+            });
+            const percent = phases.length === 0 ? 0 : Math.round((done / phases.length) * 100);
+            document.getElementById('progressPercent').innerText = `${percent}%`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            const list = document.getElementById('phaseList');
+            list.innerHTML = phases.map((p, i) => {
+                const checked = localStorage.getItem(`pf_v1_${currentRole}_phase_${i}`) === 'true';
+                return `<button onclick="togglePhaseCompletion(${i})" class="p-4 border-4 ${checked ? 'bg-green-100 border-green-500' : 'bg-white border-black'} rounded-2xl font-black text-left transition-all shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1">
+                    <span class="mr-3">${checked ? '☑' : '☐'}</span> Phase ${i + 1}: ${escapeHTML(p.title)}
+                </button>`;
+            }).join('');
+        }
+
+        // --- Export PDF ---
+        async function exportRoadmapPDF() {
+            const target = document.getElementById('roadmapContent');
+            if(!target) return;
+            try {
+                const progressCard = document.getElementById('progressCard');
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:' + (target.offsetWidth || 1200) + 'px;background:#fff;';
+                document.body.appendChild(wrapper);
+                if (progressCard && progressCard.classList.contains('hidden') === false) {
+                    wrapper.appendChild(progressCard.cloneNode(true));
+                }
+                wrapper.appendChild(target.cloneNode(true));
+                const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: '#ffffff' });
+                document.body.removeChild(wrapper);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`PathFinder_${currentRole || 'Roadmap'}.pdf`);
+            } catch (err) {
+                alert('PDF export failed');
+            }
+        }
+
+        // --- Export Notion ---
+        async function exportRoadmapNotion() {
+            if(!currentPathData) return alert('Generate a roadmap first');
+            const md = generateNotionMarkdown(currentPathData);
+            try {
+                const res = await fetch('/api/notion-export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: currentRole, markdown: md })
+                });
+                const data = await res.json();
+                if(data && data.url) {
+                    window.open(data.url, '_blank');
+                } else {
+                    downloadTextFile(`${currentRole || 'roadmap'}.md`, md);
+                }
+            } catch (err) {
+                downloadTextFile(`${currentRole || 'roadmap'}.md`, md);
+            }
+        }
+
+        // --- Flashcards & Quizzes ---
+        async function generateFlashcards() {
+            const topic = document.getElementById('flashcardsTopicInput')?.value.trim();
+            const output = document.getElementById('flashcardsOutput');
+            if(!topic) return alert('Enter a topic');
+            output.innerHTML = '<p class="animate-pulse">Generating flashcards...</p>';
+            try {
+                const res = await fetch('/api/flashcards-quizzes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, type: 'flashcards', role: currentRole || topic })
+                });
+                const data = await res.json();
+                output.innerHTML = (data.items || []).map((it, idx) => `
+                    <div class="p-3 mb-2 border-4 border-black rounded-xl bg-white">
+                        <p class="font-black text-blue-600">Q${idx + 1}: ${escapeHTML(it.question)}</p>
+                        <p class="mt-1">A: ${escapeHTML(it.answer)}</p>
+                    </div>
+                `).join('');
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to generate flashcards</p>';
+            }
+        }
+
+        async function startQuiz() {
+            const topic = document.getElementById('flashcardsTopicInput')?.value.trim();
+            const output = document.getElementById('flashcardsOutput');
+            if(!topic) return alert('Enter a topic');
+            output.innerHTML = '<p class="animate-pulse">Generating quiz...</p>';
+            try {
+                const res = await fetch('/api/flashcards-quizzes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, type: 'quiz', role: currentRole || topic })
+                });
+                const data = await res.json();
+                const item = (data.items || [])[0];
+                if(!item) return;
+                output.innerHTML = `
+                    <div class="p-3 border-4 border-black rounded-xl bg-white">
+                        <p class="font-black mb-2">Quiz: ${escapeHTML(item.question)}</p>
+                        ${(item.options || []).map((opt, i) => `<button onclick="this.classList.add('bg-green-200')" class="block w-full text-left p-2 mb-1 border-2 border-black rounded-lg">${String.fromCharCode(65 + i)}. ${escapeHTML(opt)}</button>`).join('')}
+                        <p class="mt-2 text-xs text-gray-500 uppercase tracking-widest">Answer: ${escapeHTML(item.answer)}</p>
+                    </div>
+                `;
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to generate quiz</p>';
+            }
+        }
+
+        // --- Interview Simulator ---
+        let interviewContext = null;
+        async function startInterview() {
+            const role = document.getElementById('interviewRoleInput')?.value.trim();
+            const topic = document.getElementById('interviewTopicInput')?.value.trim();
+            const difficulty = document.getElementById('interviewDifficulty')?.value;
+            const output = document.getElementById('interviewOutput');
+            if(!role || !topic) return alert('Enter role and topic');
+            output.innerHTML = '<p class="animate-pulse">Setting up interview...</p>';
+            try {
+                const res = await fetch('/api/interview-simulator', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, topic, difficulty, mode: 'start' })
+                });
+                const data = await res.json();
+                interviewContext = data;
+                output.innerHTML = `<p class="font-black text-red-600 uppercase text-xs">Interviewer:</p><p>${escapeHTML(data.question)}</p>`;
+                document.getElementById('interviewAnswerInput').value = '';
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to start interview</p>';
+            }
+        }
+        async function submitInterviewAnswer() {
+            const answer = document.getElementById('interviewAnswerInput')?.value.trim();
+            const output = document.getElementById('interviewOutput');
+            if(!interviewContext) return alert('Start interview first');
+            if(!answer) return;
+            try {
+                const res = await fetch('/api/interview-simulator', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        mode: 'answer', 
+                        role: interviewContext.role,
+                        topic: interviewContext.topic,
+                        difficulty: interviewContext.difficulty,
+                        question: interviewContext.question,
+                        answer 
+                    })
+                });
+                const data = await res.json();
+                output.innerHTML += `<hr class="my-3 border-black"><p class="font-black text-green-600 uppercase text-xs">You:</p><p>${escapeHTML(answer)}</p><p class="font-black text-red-600 uppercase text-xs mt-2">Interviewer:</p><p>${escapeHTML(data.feedback || data.message || 'Good answer.' )}</p>`;
+                if(data.nextQuestion) {
+                    interviewContext.question = data.nextQuestion;
+                    output.innerHTML += `<p class="font-black text-red-600 uppercase text-xs mt-2">Interviewer:</p><p>${escapeHTML(data.nextQuestion)}</p>`;
+                }
+                document.getElementById('interviewAnswerInput').value = '';
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to submit answer</p>';
+            }
+        }
+
         window.onload = () => {
             updateCollectionsUI();
             updateVaultUI();
             updateMasteryAnalytics();
+            const savedTheme = localStorage.getItem('pf_theme');
+            if(savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                const icon = document.getElementById('darkModeIcon');
+                if(icon) icon.innerText = 'light_mode';
+            }
+            const progressCard = document.getElementById('progressCard');
+            if(progressCard && currentPathData) updateProgressUI();
         };
 
         // Download functionality

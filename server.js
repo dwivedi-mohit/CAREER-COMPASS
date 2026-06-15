@@ -174,6 +174,203 @@ app.post('/api/tutor-query', async (req, res) => {
     }
 });
 
+// --- Flashcards & Quizzes ---
+app.post('/api/flashcards-quizzes', async (req, res) => {
+    const { role, topic, type, count = 5 } = req.body;
+
+    if (type !== 'flashcards' && type !== 'quiz') {
+        return res.status(400).json({ error: 'Invalid type. Must be "flashcards" or "quiz"' });
+    }
+
+    const getMockData = (topic, type, count) => {
+        const items = [];
+        for (let i = 1; i <= count; i++) {
+            if (type === 'flashcards') {
+                items.push({
+                    question: `Mock question ${i} about ${topic}`,
+                    answer: `Mock answer ${i} for ${topic}`
+                });
+            } else {
+                items.push({
+                    question: `Mock quiz question ${i} about ${topic}`,
+                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                    answer: 'Option A',
+                    explanation: `Explanation for question ${i}`
+                });
+            }
+        }
+        return { items, type };
+    };
+
+    try {
+        if (process.env.GROQ_API_KEY) {
+            const prompt = type === 'flashcards'
+                ? `Generate ${count} flashcards about ${topic} for a ${role}. Return JSON: {"items":[{"question":"...","answer":"..."}]}`
+                : `Generate ${count} quiz questions about ${topic} for a ${role}. Return JSON: {"items":[{"question":"...","options":["..."],"answer":"...","explanation":"..."}]}`;
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    response_format: { type: 'json_object' },
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Groq API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const content = data.choices[0]?.message?.content;
+            if (!content) throw new Error('No content from Groq');
+
+            const parsed = JSON.parse(content);
+            return res.status(200).json({ ...parsed, type });
+        } else {
+            return res.status(200).json(getMockData(topic, type, count));
+        }
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+// --- Interview Simulator ---
+app.post('/api/interview-simulator', async (req, res) => {
+    const { role, topic, difficulty, mode, answer } = req.body;
+
+    if (mode !== 'start' && mode !== 'answer') {
+        return res.status(400).json({ error: 'Invalid mode' });
+    }
+
+    const json = (status, payload) => res.status(status).json(payload);
+
+    if (!process.env.GROQ_API_KEY) {
+        return mode === 'start'
+            ? json(200, {
+                  mode: 'question',
+                  question: `Tell me about your experience with ${topic || 'this topic'} as a ${role || 'professional'}.`,
+                  evaluationCriteria: ['Clarity', 'Relevance', 'Depth of knowledge'],
+              })
+            : json(200, {
+                  mode: 'feedback',
+                  score: 7,
+                  feedback: 'Good structure and clarity, but could use more concrete examples.',
+                  nextQuestion: `How would you handle a ${difficulty || 'challenging'} scenario in ${topic || 'this area'}?`,
+              });
+    }
+
+    try {
+        const systemPrompt =
+            mode === 'start'
+                ? 'You are an interview simulator. Output JSON with keys: mode:"question", question (string), evaluationCriteria (array of 3 strings).'
+                : 'You are an interview simulator. Evaluate the answer. Output JSON with keys: mode:"feedback", score (number 1-10), feedback (string, 1-2 sentences), nextQuestion (string).';
+
+        const userPrompt = [
+            `Role: ${role || 'N/A'}`,
+            `Topic: ${topic || 'N/A'}`,
+            `Difficulty: ${difficulty || 'medium'}`,
+            mode === 'answer' ? `Answer: ${answer || ''}` : '',
+        ].filter(Boolean).join('\n');
+
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt },
+                ],
+                response_format: { type: 'json_object' },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Groq API responded with ${response.status}`);
+        }
+
+        const data = await response.json();
+        const parsed = JSON.parse(data.choices[0].message.content);
+        json(200, parsed);
+    } catch (err) {
+        console.error('Interview simulator error:', err);
+        json(500, { error: 'Failed to generate interview response' });
+    }
+});
+
+// --- Notion Export ---
+app.post('/api/notion-export', async (req, res) => {
+    const { title, markdown } = req.body;
+
+    if (!title || !markdown) {
+        return res.status(400).json({ error: 'Missing title or markdown' });
+    }
+
+    const hasNotionEnv = process.env.NOTION_API_TOKEN && process.env.NOTION_DATABASE_ID;
+
+    if (!hasNotionEnv) {
+        return res.status(200).json({
+            mode: 'markdown',
+            markdown,
+            filename: `${title.replace(/[^a-zA-Z0-9]/g, '_')}.md`
+        });
+    }
+
+    const lines = markdown.split('\n').filter(line => line.trim());
+    const children = lines.map(line => ({
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+            rich_text: [{ type: 'text', text: { content: line } }]
+        }
+    }));
+
+    const titleProperty = process.env.NOTION_TITLE_PROPERTY || 'Name';
+
+    try {
+        const notionRes = await fetch('https://api.notion.com/v1/pages', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.NOTION_API_TOKEN}`,
+                'Notion-Version': '2022-06-28',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                parent: { database_id: process.env.NOTION_DATABASE_ID },
+                properties: {
+                    [titleProperty]: {
+                        title: [{ type: 'text', text: { content: title } }]
+                    }
+                },
+                children
+            })
+        });
+
+        if (!notionRes.ok) {
+            const error = await notionRes.text();
+            return res.status(500).json({ error: 'Notion API error', details: error });
+        }
+
+        const notionData = await notionRes.json();
+
+        return res.status(200).json({
+            mode: 'notion',
+            url: notionData.url,
+            title
+        });
+    } catch (e) {
+        return res.status(500).json({ error: 'Notion API error', details: e.message });
+    }
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
