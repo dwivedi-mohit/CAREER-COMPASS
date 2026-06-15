@@ -688,7 +688,7 @@
             `;
 
             try {
-                const res = await fetch('http://localhost:3000/api/generate-roadmap', {
+                const res = await fetch('/api/generate-roadmap', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ role })
@@ -780,7 +780,7 @@
             btn.innerHTML = `<div class="loading-spinner scale-50 mx-auto"></div>`;
             
             try {
-                const res = await fetch('http://localhost:3000/api/tutor-query', {
+                const res = await fetch('/api/tutor-query', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
@@ -812,7 +812,7 @@
             input.value = "";
 
             try {
-                const res = await fetch('http://localhost:3000/api/tutor-query', {
+                const res = await fetch('/api/tutor-query', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
@@ -847,7 +847,7 @@
             output.innerHTML = `<div class="flex flex-col items-center"><div class="loading-spinner scale-50 mb-4"></div><p class="text-lg">Generating technical challenge...</p></div>`;
             
             try {
-                const res = await fetch('http://localhost:3000/api/tutor-query', {
+                const res = await fetch('/api/tutor-query', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
