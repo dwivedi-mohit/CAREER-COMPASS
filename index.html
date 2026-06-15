@@ -480,7 +480,7 @@
         </section>
     </div>
 
-    <!-- ROADMAP RESULT VIEW -->
+    <!-- ROADMAP RESULT VIEW (Separate View) -->
     <div id="roadmapView" class="hidden px-10 py-24 max-w-[1800px] mx-auto">
         <div class="flex justify-between items-center mb-16 pb-10 border-b-8 border-black">
             <button onclick="backToLibrary()" class="flex items-center gap-3 px-8 py-4 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1">
@@ -674,6 +674,7 @@
             currentRole = role;
             const content = document.getElementById('roadmapContent');
             
+            // Switch view
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('toolsView').classList.add('hidden');
             document.getElementById('roadmapView').classList.remove('hidden');
@@ -697,7 +698,7 @@
                 saveToCollection(role, data);
                 renderRoadmap(data);
             } catch (err) {
-                content.innerHTML = `<div class="text-center py-20"><p class="text-red-600 font-black text-3xl mb-4">ENGINE OFFLINE</p><p class="font-bold">Deployment sync error.</p></div>`;
+                content.innerHTML = `<div class="text-center py-20"><p class="text-red-600 font-black text-3xl mb-4">ENGINE OFFLINE</p><p class="font-bold">Ensure server.js is running on port 3000.</p></div>`;
             }
         }
 
@@ -744,6 +745,7 @@
             updateMasteryAnalytics();
         }
 
+        // --- Feature Interactions ---
         function openTopic(title, index) {
             document.getElementById('sidebarTitle').innerText = title;
             const resources = document.getElementById('resourceLinks');
@@ -752,7 +754,7 @@
                     <span>Google Best Practices</span>
                     <span class="material-symbols-outlined">open_in_new</span>
                 </a>
-                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(topic)}+course" target="_blank" class="block p-5 border-4 border-black rounded-2xl font-black hover:bg-blue-50 transition-all flex justify-between items-center">
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(title)}+course" target="_blank" class="block p-5 border-4 border-black rounded-2xl font-black hover:bg-blue-50 transition-all flex justify-between items-center">
                     <span>Video Deep Dive</span>
                     <span class="material-symbols-outlined">play_circle</span>
                 </a>
@@ -793,11 +795,13 @@
                     </div>
                     <button onclick="addToVault('${topic} Plan', '#')" class="mt-4 w-full py-3 border-2 border-black rounded-xl font-black text-xs hover:bg-black hover:text-white transition-all uppercase">Save to Vault</button>
                 `;
+                addToVault(`${topic} Study Plan`, "#");
             } catch (err) {
                 btn.innerText = "ERROR - TRY AGAIN";
             }
         }
 
+        // --- Tools Logic ---
         async function askTutor() {
             const input = document.getElementById('tutorInput');
             const output = document.getElementById('tutorOutput');
@@ -860,6 +864,7 @@
             }
         }
 
+        // --- Pomodoro ---
         let timerSeconds = 25 * 60;
         let timerActive = false;
         let timerInterval;
@@ -897,6 +902,7 @@
             document.getElementById('timerDisplay').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
+        // --- Data Persistence ---
         function saveToCollection(role, data) {
             let history = JSON.parse(localStorage.getItem('pf_history') || '[]');
             if(!history.find(h => h.role === role)) {
@@ -978,6 +984,7 @@
             }
         }
 
+        // --- Widget Controls ---
         function toggleMentor() {
             const widget = document.getElementById('aiMentorWidget');
             const trigger = document.getElementById('mentorTrigger');
@@ -1012,13 +1019,14 @@
             updateMasteryAnalytics();
         };
 
+        // Download functionality
         const downloadBtn = document.getElementById('downloadBtn');
         if(downloadBtn) {
             downloadBtn.onclick = () => {
                 const target = document.getElementById('roadmapContent');
                 html2canvas(target, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `AjayPath_${currentRole}_Roadmap.png`;
+                    link.download = `PathFinder_${currentRole}_Roadmap.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                 });
