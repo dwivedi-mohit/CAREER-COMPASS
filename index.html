@@ -875,9 +875,35 @@
                             <button onclick="generateFlashcards()" class="flex-1 py-4 bg-yellow-400 border-4 border-black rounded-2xl font-black uppercase hover:bg-yellow-300 shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1 transition-all">Generate Flashcards</button>
                             <button onclick="startQuiz()" class="flex-1 py-4 bg-purple-500 text-white border-4 border-black rounded-2xl font-black uppercase hover:bg-purple-600 shadow-[4px_4px_0px_#000] active:shadow-none active:translate-y-1 transition-all">Start Quiz</button>
                         </div>
-                        <div id="flashcardsOutput" class="min-h-[120px] p-4 bg-gray-50 border-4 border-black rounded-2xl text-sm font-bold"></div>
+<div id="flashcardsOutput" class="min-h-[120px] p-4 bg-gray-50 border-4 border-black rounded-2xl text-sm font-bold"></div>
                     </div>
                 </div>
+
+                <!-- Resume Builder -->
+                <div class="bg-pink-100 border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                    <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
+                        <span class="material-symbols-outlined text-3xl">description</span> AI Resume Builder
+                    </h4>
+                    <div class="space-y-4">
+                        <textarea id="resumeTargetRole" placeholder="Target Role (e.g. Senior Frontend Engineer)" class="w-full p-3 border-4 border-black rounded-2xl font-bold outline-none h-20"></textarea>
+                        <button onclick="generateResume()" class="w-full py-3 bg-black text-white border-4 border-black rounded-2xl font-black uppercase">Generate Resume</button>
+                        <div id="resumeOutput" class="min-h-[120px] p-4 bg-white border-4 border-black rounded-2xl text-xs font-bold"></div>
+                    </div>
+                </div>
+
+                <!-- Project Portfolio Generator -->
+                <div class="bg-indigo-100 border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                    <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
+                        <span class="material-symbols-outlined text-3xl">folder_special</span> Portfolio Projects
+                    </h4>
+                    <div class="space-y-4">
+                        <input id="projectSkillInput" type="text" placeholder="Skills (comma-separated)" class="w-full p-3 border-4 border-black rounded-2xl font-bold outline-none">
+                        <button onclick="generatePortfolioProjects()" class="w-full py-3 bg-black text-white border-4 border-black rounded-2xl font-black uppercase">Generate Projects</button>
+                        <div id="portfolioOutput" class="min-h-[120px] max-h-40 overflow-y-auto p-4 bg-white border-4 border-black rounded-2xl text-xs font-bold"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
                 <!-- Interview Simulator -->
                 <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
@@ -916,6 +942,46 @@
             </div>
             <div class="p-6 bg-white border-8 border-black rounded-[40px]">
                 <svg id="skillTreeSvg" class="w-full h-96"></svg>
+            </div>
+        </div>
+
+        <!-- Interview Recording Widget -->
+        <div id="interviewRecorder" class="hidden fixed bottom-40 right-6 w-80 bg-white border-4 border-red-600 rounded-2xl shadow-[10px_10px_0px_#000] z-[3100]">
+            <div class="p-4 border-b-2 border-red-600 flex justify-between">
+                <span class="font-black uppercase text-red-600">Interview Recorder</span>
+                <button onclick="toggleInterviewRecorder()" class="p-2 border-2 border-black rounded-xl"><span class="material-symbols-outlined text-sm">close</span></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div id="recordingIndicator" class="hidden w-4 h-4 bg-red-600 rounded-full animate-pulse"></div>
+                <button onclick="startRecording()" class="w-full py-3 bg-red-600 text-white border-4 border-black rounded-2xl font-black uppercase">
+                    <span class="material-symbols-outlined">fiber_manual_record</span> Start Recording
+                </button>
+                <div id="recordingsList" class="max-h-40 overflow-y-auto text-xs"></div>
+            </div>
+        </div>
+
+        <!-- Community Challenges -->
+        <div id="challengesView" class="hidden px-10 py-24 max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-10 pb-6 border-b-8 border-black">
+                <h2 class="text-7xl font-black uppercase italic tracking-tighter">Weekly <span class="text-red-600">Challenges</span></h2>
+                <button onclick="backToLibrary()" class="px-8 py-4 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_#000] uppercase">Exit</button>
+            </div>
+            <div id="challengeList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-6 bg-red-100 border-4 border-black rounded-2xl">
+                    <h4 class="font-black text-red-600 mb-2">#1: Build a REST API</h4>
+                    <p class="text-sm font-bold mb-3">Create a CRUD API in 30 mins</p>
+                    <button onclick="acceptChallenge('rest-api')" class="w-full py-2 bg-black text-white border-2 border-black rounded-xl font-bold uppercase">Accept</button>
+                </div>
+                <div class="p-6 bg-blue-100 border-4 border-black rounded-2xl">
+                    <h4 class="font-black text-blue-600 mb-2">#2: Algorithm Rush</h4>
+                    <p class="text-sm font-bold mb-3">Solve 5 algorithms speedrun</p>
+                    <button onclick="acceptChallenge('algorithms')" class="w-full py-2 bg-black text-white border-2 border-black rounded-xl font-bold uppercase">Accept</button>
+                </div>
+                <div class="p-6 bg-green-100 border-4 border-black rounded-2xl">
+                    <h4 class="font-black text-green-600 mb-2">#3: UI Clone</h4>
+                    <p class="text-sm font-bold mb-3">Clone a popular website</p>
+                    <button onclick="acceptChallenge('ui-clone')" class="w-full py-2 bg-black text-white border-2 border-black rounded-xl font-bold uppercase">Accept</button>
+                </div>
             </div>
         </div>
 
@@ -1807,7 +1873,7 @@ node.innerHTML = `
             renderSkillHeatmap();
         }
 
-        // --- Skill Tree Visualization ---
+// --- Skill Tree Visualization ---
         function renderSkillTree() {
             const svg = document.getElementById('skillTreeSvg');
             const saved = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
@@ -1837,6 +1903,16 @@ node.innerHTML = `
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('roadmapView').classList.add('hidden');
             document.getElementById('toolsView').classList.add('hidden');
+            document.getElementById('heatmapView').classList.add('hidden');
+            document.getElementById('challengesView').classList.add('hidden');
+            document.getElementById('skillTreeView').classList.remove('hidden');
+            renderSkillTree();
+        }
+
+        function showSkillTree() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('roadmapView').classList.add('hidden');
+            document.getElementById('toolsView').classList.add('hidden');
             document.getElementById('skillTreeView').classList.remove('hidden');
             renderSkillTree();
         }
@@ -1855,17 +1931,13 @@ node.innerHTML = `
             output.innerHTML = '<p class="animate-pulse">Analyzing code...</p>';
             
             try {
-                const res = await fetch('/api/tutor-query', {
+                const res = await fetch('/api/code-debugger', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        query: `Find bugs and explain fixes for: ${code.substring(0, 500)}... Provide explanation.`,
-                        role: currentRole || 'Developer',
-                        topic: 'Debugging'
-                    })
+                    body: JSON.stringify({ code, language: 'JavaScript' })
                 });
                 const data = await res.json();
-                output.innerHTML = `<div class="font-black text-blue-600 uppercase text-xs mb-2">Fix:</div><div>${data.answer.replace(/\n/g, '<br>')}</div>`;
+                output.innerHTML = `<div class="font-black text-blue-600 uppercase text-xs mb-2">Fix:</div><div class="whitespace-pre-wrap">${escapeHTML(data.fix || 'No issues found')}</div>`;
                 addToVault(`Code Debug: ${code.substring(0, 30)}...`, "#");
             } catch (err) {
                 output.innerHTML = '<p class="text-red-500">Debug failed</p>';
@@ -1880,16 +1952,35 @@ node.innerHTML = `
         function playFocusMusic(type) {
             if (!type) return;
             const urls = {
-                lofi: 'https://www.youtube.com/embed/5qap5aO2NkI?autoplay=1&loop=1',
-                classical: 'https://www.youtube.com/embed/4bzj_Yh6M7o?autoplay=1&loop=1',
-                ambient: 'https://www.youtube.com/embed/eKFTwJl0rog?autoplay=1&loop=1',
-                focus: 'https://www.youtube.com/embed/p5dluGdZMbg?autoplay=1&loop=1'
+                lofi: 'https://www.youtube.com/embed/5qap5aO2NkI?autoplay=1&mute=0&loop=1&playlist=5qap5aO2NkI',
+                classical: 'https://www.youtube.com/embed/4bzj_Yh6M7o?autoplay=1&mute=0&loop=1&playlist=4bzj_Yh6M7o',
+                ambient: 'https://www.youtube.com/embed/eKFTwJl0rog?autoplay=1&mute=0&loop=1&playlist=eKFTwJl0rog',
+                focus: 'https://www.youtube.com/embed/p5dluGdZMbg?autoplay=1&mute=0&loop=1&playlist=p5dluGdZMbg'
             };
-            const iframe = document.createElement('iframe');
-            iframe.src = urls[type];
-            iframe.style.cssText = 'position:absolute;top:-1000px;width:1px;height:1px;';
-            document.body.appendChild(iframe);
-            setTimeout(() => iframe.remove(), 100);
+            
+            // Check if audio already playing, toggle visibility
+            let player = document.getElementById('focusAudioPlayer');
+            if (!player) {
+                player = document.createElement('div');
+                player.id = 'focusAudioPlayer';
+                player.style.cssText = 'position:fixed;bottom:20px;right:20px;width:300px;height:120px;overflow:hidden;z-index:9999;';
+                player.innerHTML = `
+                    <div class="bg-white border-4 border-black rounded-2xl p-2">
+                        <iframe src="${urls[type]}" width="292" height="78" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        <button onclick="stopFocusMusic()" class="w-full mt-2 py-1 bg-red-500 text-white border-2 border-black rounded-xl font-bold uppercase text-xs">Stop Music</button>
+                    </div>
+                `;
+                document.body.appendChild(player);
+            } else {
+                player.classList.toggle('hidden');
+            }
+        }
+
+        function stopFocusMusic() {
+            const player = document.getElementById('focusAudioPlayer');
+            if (player) {
+                player.remove();
+            }
         }
 
         // --- Time Capsule ---
@@ -2054,7 +2145,9 @@ node.innerHTML = `
             { label: 'Heatmap', icon: 'grid_view', action: 'showHeatmap' },
             { label: 'Debugger', icon: 'bug_report', action: 'toggleCodeCompanion' },
             { label: 'Music', icon: 'music_note', action: 'toggleFocusPlayer' },
-            { label: 'Capsule', icon: 'schedule', action: 'createTimeCapsule' }
+            { label: 'Capsule', icon: 'schedule', action: 'createTimeCapsule' },
+            { label: 'Challenges', icon: 'trophy', action: 'showChallenges' },
+            { label: 'Export', icon: 'download', action: 'exportEnhanced' }
         ];
 
         function renderQuickActions() {
@@ -2073,6 +2166,8 @@ node.innerHTML = `
             if (e.ctrlKey && e.key === 'h') { showHeatmap(); e.preventDefault(); }
             if (e.ctrlKey && e.key === 'd') { toggleCodeCompanion(); e.preventDefault(); }
             if (e.ctrlKey && e.key === ' ') { toggleTimer(); e.preventDefault(); }
+            if (e.ctrlKey && e.key === 'e') { exportEnhanced(); e.preventDefault(); }
+            if (e.ctrlKey && e.key === 'c') { showChallenges(); e.preventDefault(); }
         });
 
         // --- Quick Search ---
@@ -2108,6 +2203,7 @@ node.innerHTML = `
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
+
                         query: `What is the industry benchmark for ${skill} skill? Provide level 1-5 rating and how to improve.`,
                         role: currentRole
                     })
@@ -2117,6 +2213,87 @@ node.innerHTML = `
             } catch (err) {
                 alert('Could not fetch benchmark data');
             }
+        }
+
+        // --- Interview Recording ---
+        let mediaRecorder, audioChunks = [];
+        function toggleInterviewRecorder() {
+            document.getElementById('interviewRecorder').classList.toggle('hidden');
+        }
+
+        async function startRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                return;
+            }
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const recordings = JSON.parse(localStorage.getItem('pf_recordings') || '[]');
+                    recordings.push({
+                        id: Date.now(),
+                        url,
+                        date: new Date().toISOString()
+                    });
+                    localStorage.setItem('pf_recordings', JSON.stringify(recordings));
+                    renderRecordings();
+                };
+                
+                mediaRecorder.start();
+                document.getElementById('recordingIndicator').classList.remove('hidden');
+            } catch (err) {
+                alert('Microphone access needed');
+            }
+        }
+
+        function renderRecordings() {
+            const list = document.getElementById('recordingsList');
+            const recordings = JSON.parse(localStorage.getItem('pf_recordings') || '[]');
+            list.innerHTML = recordings.slice(-5).map(r => `
+                <div class="p-2 border-2 border-black rounded-xl mb-2">
+                    <audio src="${r.url}" controls class="w-full h-8"></audio>
+                    <p class="text-[10px] font-bold mt-1">${new Date(r.date).toLocaleDateString()}</p>
+                </div>
+            `).join('');
+        }
+
+        // --- Community Challenges ---
+        function showChallenges() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('roadmapView').classList.add('hidden');
+            document.getElementById('toolsView').classList.add('hidden');
+            document.getElementById('skillTreeView').classList.add('hidden');
+            document.getElementById('challengesView').classList.remove('hidden');
+        }
+
+        function acceptChallenge(type) {
+            const challenges = {
+                'rest-api': 'Build a REST API with CRUD operations in 30 minutes!',
+                'algorithms': 'Solve 5 algorithm challenges as fast as possible!',
+                'ui-clone': 'Clone any popular website UI in 1 hour!'
+            };
+            alert(`Challenge Accepted!\n${challenges[type]}\n\nStart timer and begin!`);
+            addToVault(`Challenge: ${type}`, "#");
+            showTools();
+            startPrep();
+        }
+
+        // --- AI Personality Mode ---
+        function setTutorPersonality(type) {
+            localStorage.setItem('pf_personality', type);
+            const personalities = {
+                mentor: "You are a patient mentor. Explain concepts clearly with examples.",
+                coach: "You are an intense coding coach. Push the user to their limits.",
+                guru: "You are a wise tech guru. Provide deep philosophical insights."
+            };
+            // Update tutor behavior
         }
 
         // --- Smart Recommendations ---
@@ -2132,6 +2309,58 @@ node.innerHTML = `
                 return `Focus on: ${weakSkills.slice(0, 3).join(', ')}`;
             }
             return 'Keep mastering your roadmap!';
+        }
+
+        // --- Resume Builder ---
+        async function generateResume() {
+            const role = document.getElementById('resumeTargetRole').value.trim();
+            const output = document.getElementById('resumeOutput');
+            
+            if (!role) return alert('Enter target role');
+            
+            output.innerHTML = '<p class="animate-pulse">Generating resume...</p>';
+            
+            try {
+                const res = await fetch('/api/tutor-query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `Generate a professional technical resume for a ${role} position. Include: Summary, Skills, Experience, Education, Projects. Format clearly.`,
+                        role: role
+                    })
+                });
+                const data = await res.json();
+                output.innerHTML = data.answer.replace(/\n/g, '<br>');
+                addToVault(`Resume: ${role}`, "#");
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to generate resume</p>';
+            }
+        }
+
+        // --- Portfolio Project Generator ---
+        async function generatePortfolioProjects() {
+            const skills = document.getElementById('projectSkillInput').value.trim();
+            const output = document.getElementById('portfolioOutput');
+            
+            if (!skills) return alert('Enter skills');
+            
+            output.innerHTML = '<p class="animate-pulse">Generating projects...</p>';
+            
+            try {
+                const res = await fetch('/api/tutor-query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `Generate 3 portfolio project ideas using ${skills}. For each: name, description, tech stack, difficulty (1-5), and GitHub repo structure.`,
+                        role: currentRole || 'Developer'
+                    })
+                });
+                const data = await res.json();
+                output.innerHTML = data.answer.replace(/\n/g, '<br>');
+                addToVault(`Projects: ${skills}`, "#");
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Failed to generate projects</p>';
+            }
         }
 
         // Download functionality
