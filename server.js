@@ -174,6 +174,40 @@ app.post('/api/tutor-query', async (req, res) => {
     }
 });
 
+// --- Code Debugger Endpoint ---
+app.post('/api/code-debugger', async (req, res) => {
+    const { code, language } = req.body;
+    const groqKey = process.env.GROQ_API_KEY;
+
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${groqKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert code debugger. Find bugs, explain fixes, and provide corrected code. Be concise."
+                    },
+                    {
+                        role: "user",
+                        content: `Fix this ${language || 'JavaScript'} code:\n${code.substring(0, 1000)}`
+                    }
+                ]
+            })
+        });
+
+        const data = await response.json();
+        res.json({ fix: data.choices[0].message.content });
+    } catch (error) {
+        res.status(500).json({ error: true, message: error.message });
+    }
+});
+
 // --- Flashcards & Quizzes ---
 app.post('/api/flashcards-quizzes', async (req, res) => {
     const { role, topic, type, count = 5 } = req.body;

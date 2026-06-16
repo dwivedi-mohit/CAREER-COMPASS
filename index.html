@@ -231,6 +231,129 @@
         html.dark .shadow-\[20px_20px_0px_\#000\] {
             box-shadow: 20px 20px 0px #1e293b !important;
         }
+
+        /* Calendar Styles */
+        .calendar-day {
+            min-height: 80px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .calendar-day:hover {
+            background: #f9fafb;
+            border-color: #cbd5e1;
+        }
+        .calendar-day.today {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .calendar-day.has-deadline {
+            background: #fef2f2;
+        }
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+        .calendar-day .day-number {
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .deadline-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border: 3px solid #000;
+            border-radius: 16px;
+            background: #fff;
+            transition: all 0.2s;
+        }
+        .deadline-item:hover {
+            transform: translateX(4px);
+        }
+        .deadline-item.high-priority {
+            border-left: 6px solid #ef4444;
+        }
+        .deadline-item.medium-priority {
+            border-left: 6px solid #f59e0b;
+        }
+        .deadline-item.low-priority {
+            border-left: 6px solid #10b981;
+        }
+
+        /* Skill Heatmap */
+        .skill-tile {
+            aspect-ratio: 1;
+            border: 3px solid #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .skill-tile:hover { transform: scale(1.1) rotate(5deg); }
+        .level-0 { background: #fff; color: #666; }
+        .level-1 { background: #fef3c7; color: #000; }
+        .level-2 { background: #fde68a; color: #000; }
+        .level-3 { background: #facc15; color: #000; }
+        .level-4 { background: #eab308; color: #000; }
+        .level-5 { background: #ca8a04; color: #fff; }
+
+        /* Code Companion */
+        .code-editor {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: none;
+        }
+
+        /* Focus Player */
+        .focus-track {
+            transition: all 0.3s;
+        }
+
+        /* Skill Heatmap */
+        .skill-tile {
+            aspect-ratio: 1;
+            border: 3px solid #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .skill-tile:hover { transform: scale(1.1) rotate(5deg); }
+        .level-0 { background: #fff; color: #666; }
+        .level-1 { background: #fef3c7; color: #000; }
+        .level-2 { background: #fde68a; color: #000; }
+        .level-3 { background: #facc15; color: #000; }
+        .level-4 { background: #eab308; color: #000; }
+        .level-5 { background: #ca8a04; color: #fff; }
+
+        /* Code Companion */
+        .code-editor {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: none;
+        }
+
+        /* Focus Player */
+        .focus-track {
+            transition: all 0.3s;
+        }
+        .focus-track.playing {
+            background: #10b981;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -249,6 +372,20 @@
             <button onclick="toggleCollections()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
                 <span class="material-symbols-outlined text-xl">library_books</span> COLLECTION
             </button>
+            <div id="quickActionBar" class="flex gap-2">
+                <button onclick="toggleCalendar()" class="p-2 border-2 border-black rounded-xl hover:bg-gray-100 transition-all" title="Calendar">
+                    <span class="material-symbols-outlined text-sm">calendar_month</span>
+                </button>
+                <button onclick="showHeatmap()" class="p-2 border-2 border-black rounded-xl hover:bg-gray-100 transition-all" title="Heatmap">
+                    <span class="material-symbols-outlined text-sm">grid_view</span>
+                </button>
+                <button onclick="toggleCodeCompanion()" class="p-2 border-2 border-black rounded-xl hover:bg-gray-100 transition-all" title="Debugger">
+                    <span class="material-symbols-outlined text-sm">bug_report</span>
+                </button>
+                <button onclick="toggleFocusPlayer()" class="p-2 border-2 border-black rounded-xl hover:bg-gray-100 transition-all" title="Focus Music">
+                    <span class="material-symbols-outlined text-sm">music_note</span>
+                </button>
+            </div>
             <button id="darkModeToggle" onclick="toggleDarkMode()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
                 <span id="darkModeIcon" class="material-symbols-outlined text-xl">dark_mode</span>
             </button>
@@ -537,6 +674,94 @@
                 </div>
             </div>
         </section>
+
+        <!-- Calendar Modal -->
+        <div id="calendarModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[3000] flex items-center justify-center p-4">
+            <div class="bg-white border-8 border-black rounded-[40px] w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="p-8 border-b-4 border-black flex justify-between items-center">
+                    <h3 class="text-4xl font-black uppercase italic">Study Calendar & Deadlines</h3>
+                    <button onclick="toggleCalendar()" class="p-3 border-4 border-black rounded-xl hover:bg-gray-100 transition-all">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="changeMonth(-1)" class="p-4 border-4 border-black rounded-2xl font-black hover:bg-gray-100 transition-all">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                        </button>
+                        <h4 id="calendarMonth" class="text-3xl font-black uppercase"></h4>
+                        <button onclick="changeMonth(1)" class="p-4 border-4 border-black rounded-2xl font-black hover:bg-gray-100 transition-all">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-2 mb-6">
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Mon</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Tue</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Wed</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Thu</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Fri</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Sat</div>
+                        <div class="text-center font-black text-xs uppercase p-4 border-b-2 border-black">Sun</div>
+                    </div>
+                    <div id="calendarDays" class="grid grid-cols-7 gap-2"></div>
+                    <div class="mt-8 p-6 bg-gray-50 border-4 border-black rounded-2xl">
+                        <h5 class="text-xl font-black mb-4 uppercase">Add Deadline</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input id="deadlineTitle" type="text" placeholder="Deadline title" class="p-4 border-4 border-black rounded-2xl font-bold outline-none">
+                            <input id="deadlineDate" type="date" class="p-4 border-4 border-black rounded-2xl font-bold outline-none">
+                            <select id="deadlinePriority" class="p-4 border-4 border-black rounded-2xl font-bold outline-none bg-white">
+                                <option value="high">🔴 High Priority</option>
+                                <option value="medium">🟡 Medium Priority</option>
+                                <option value="low">🟢 Low Priority</option>
+                            </select>
+                            <input id="deadlinePhase" type="text" placeholder="Roadmap Phase (optional)" class="p-4 border-4 border-black rounded-2xl font-bold outline-none md:col-span-2">
+                            <button onclick="addDeadline()" class="py-4 bg-black text-white border-4 border-black rounded-2xl font-black uppercase hover:bg-gray-800 transition-all">Add Deadline</button>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                        <h5 class="text-xl font-black mb-4 uppercase">Upcoming Deadlines</h5>
+                        <div id="deadlinesList" class="space-y-3 max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skill Heatmap View -->
+        <div id="heatmapView" class="hidden px-10 py-24 max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-10 pb-6 border-b-8 border-black">
+                <h2 class="text-7xl font-black uppercase italic tracking-tighter">Skills <span class="text-blue-600">Matrix</span></h2>
+                <button onclick="backToLibrary()" class="px-8 py-4 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_#000] uppercase">Exit</button>
+            </div>
+            <div id="heatmapGrid" class="grid grid-cols-6 md:grid-cols-8 gap-4"></div>
+        </div>
+
+        <!-- Code Companion Widget -->
+        <div id="codeCompanion" class="hidden fixed bottom-20 right-6 w-96 bg-black text-white border-4 border-blue-600 rounded-3xl shadow-[10px_10px_0px_#3b82f6] z-[3100]">
+            <div class="p-4 border-b-2 border-blue-600 flex justify-between">
+                <span class="font-black uppercase">Code Debugger</span>
+                <button onclick="toggleCodeCompanion()" class="p-2 border-2 border-blue-600 rounded-xl hover:bg-blue-600 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <textarea id="codeInput" placeholder="Paste code with error..." class="w-full h-40 bg-gray-900 p-3 font-mono text-sm outline-none code-editor"></textarea>
+            <button onclick="debugCode()" class="w-full p-3 bg-blue-600 font-black uppercase">Debug with AI</button>
+            <div id="debugOutput" class="p-3 max-h-40 overflow-y-auto text-xs bg-gray-800"></div>
+        </div>
+
+        <!-- Focus Music Player -->
+        <div id="focusPlayer" class="hidden fixed bottom-4 left-4 bg-white border-4 border-black rounded-2xl p-4 shadow-[5px_5px_0px_#000]">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-xl">music_note</span>
+                <span class="font-black uppercase text-sm">Focus Music</span>
+            </div>
+            <select onchange="playFocusMusic(this.value)" class="w-full p-2 border-2 border-black rounded-xl font-bold text-xs">
+                <option value="">Select Playlist</option>
+                <option value="lofi">🎧 Lofi Beats</option>
+                <option value="classical">🎼 Classical</option>
+                <option value="ambient">🌊 Ambient</option>
+                <option value="focus">⚡ Deep Focus</option>
+            </select>
+        </div>
     </div>
 
     <!-- ROADMAP RESULT VIEW (Separate View) -->
@@ -598,27 +823,46 @@
                 </div>
             </div>
 
-            <!-- Productivity Stack -->
-            <div class="space-y-12">
-                <!-- Pomodoro -->
-                <div class="bg-[#ffe57f] border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000] text-center">
-                    <h4 class="font-black text-2xl mb-8 uppercase tracking-widest">Focus Engine</h4>
-                    <div id="timerDisplay" class="text-8xl font-black mb-10 font-mono tabular-nums leading-none">25:00</div>
-                    <div class="flex gap-4">
-                        <button id="timerBtn" onclick="toggleTimer()" class="flex-grow py-5 bg-black text-white border-4 border-black rounded-2xl font-black text-xl hover:bg-gray-800 uppercase shadow-[4px_4px_0px_#3b82f6]">Start</button>
-                        <button onclick="resetTimer()" class="p-5 border-4 border-black rounded-2xl font-black hover:bg-white transition-all"><span class="material-symbols-outlined text-2xl">restart_alt</span></button>
+<!-- Productivity Stack -->
+                <div class="space-y-12">
+                    <!-- Pomodoro -->
+                    <div class="bg-[#ffe57f] border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000] text-center">
+                        <h4 class="font-black text-2xl mb-8 uppercase tracking-widest">Focus Engine</h4>
+                        <div id="timerDisplay" class="text-8xl font-black mb-10 font-mono tabular-nums leading-none">25:00</div>
+                        <div class="flex gap-4">
+                            <button id="timerBtn" onclick="toggleTimer(); trackSession(25)" class="flex-grow py-5 bg-black text-white border-4 border-black rounded-2xl font-black text-xl hover:bg-gray-800 uppercase shadow-[4px_4px_0px_#3b82f6]">Start</button>
+                            <button onclick="resetTimer()" class="p-5 border-4 border-black rounded-2xl font-black hover:bg-white transition-all"><span class="material-symbols-outlined text-2xl">restart_alt</span></button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Vault -->
-                <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
-                    <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
-                        <span class="material-symbols-outlined text-3xl">inventory_2</span> Vault
-                    </h4>
-                    <div id="vaultList" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                        <p class="text-gray-400 font-bold italic py-10 text-center">Your knowledge archive is empty.</p>
+                    <!-- Vault -->
+                    <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                        <h4 class="font-black text-2xl mb-8 uppercase flex items-center gap-3">
+                            <span class="material-symbols-outlined text-3xl">inventory_2</span> Vault
+                        </h4>
+                        <div id="vaultList" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                            <p class="text-gray-400 font-bold italic py-10 text-center">Your knowledge archive is empty.</p>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- Time Warp History -->
+                    <div class="bg-purple-100 border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                        <h4 class="font-black text-xl mb-4 uppercase flex items-center gap-2">
+                            <span class="material-symbols-outlined">history</span> Time Warp
+                        </h4>
+                        <button onclick="showTimeWarp()" class="w-full py-3 bg-black text-white border-4 border-black rounded-2xl font-black uppercase">View Study History</button>
+                    </div>
+
+                    <!-- Achievement Badges -->
+                    <div class="bg-yellow-100 border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
+                        <h4 class="font-black text-xl mb-4 uppercase">Achievements</h4>
+                        <div id="achievementGrid" class="grid grid-cols-4 gap-2">
+                            <div class="w-12 h-12 border-2 border-black rounded-xl bg-white flex items-center justify-center" title="Complete First Roadmap">🏁</div>
+                            <div class="w-12 h-12 border-2 border-black rounded-xl bg-white flex items-center justify-center" title="7 Day Streak">🔥</div>
+                            <div class="w-12 h-12 border-2 border-black rounded-xl bg-white flex items-center justify-center" title="10 Questions Answered">💬</div>
+                            <div class="w-12 h-12 border-2 border-black rounded-xl bg-white flex items-center justify-center" title="Save to Vault">💾</div>
+                        </div>
+                    </div>
 
                 <!-- Flashcards & Quizzes -->
                 <div class="bg-white border-8 border-black p-10 rounded-[56px] shadow-[20px_20px_0px_#000]">
@@ -662,9 +906,20 @@
                 </div>
             </div>
         </div>
-    </div>
+</div>
 
-    <!-- AI Mentor Widget -->
+        <!-- Skill Tree View -->
+        <div id="skillTreeView" class="hidden px-10 py-24 max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-10 pb-6 border-b-8 border-black">
+                <h2 class="text-7xl font-black uppercase italic tracking-tighter">Skill <span class="text-blue-600">Tree</span></h2>
+                <button onclick="backToLibrary()" class="px-8 py-4 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[8px_8px_0px_#000] uppercase">Exit</button>
+            </div>
+            <div class="p-6 bg-white border-8 border-black rounded-[40px]">
+                <svg id="skillTreeSvg" class="w-full h-96"></svg>
+            </div>
+        </div>
+
+        <!-- AI Mentor Widget -->
     <div id="aiMentorWidget" class="mentor-widget">
         <div class="mentor-header" onclick="toggleMinimize()">
             <div class="flex items-center gap-2">
@@ -1172,6 +1427,7 @@ node.innerHTML = `
             const key = `pf_v1_${currentRole}_phase_${index}`;
             const next = localStorage.getItem(key) !== 'true';
             localStorage.setItem(key, next ? 'true' : 'false');
+            if (next) celebrateMilestone(index);
             updateProgressUI();
             if(currentPathData) renderRoadmap(currentPathData);
             updateMasteryAnalytics();
@@ -1349,10 +1605,439 @@ node.innerHTML = `
             }
         }
 
+        // --- Calendar & Deadline Tracker ---
+        let currentCalendarDate = new Date();
+        let deadlines = JSON.parse(localStorage.getItem('pf_deadlines') || '[]');
+
+        function toggleCalendar() {
+            const modal = document.getElementById('calendarModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                renderCalendar();
+                renderDeadlines();
+            }
+        }
+
+        function changeMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const monthYear = document.getElementById('calendarMonth');
+            monthYear.innerText = currentCalendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const daysContainer = document.getElementById('calendarDays');
+            const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+            const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+            const today = new Date();
+
+            let html = '';
+            const startPadding = (firstDay.getDay() + 6) % 7;
+
+            // Previous month days
+            for (let i = startPadding - 1; i >= 0; i--) {
+                const prevDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), -i);
+                html += createDayElement(prevDate, true);
+            }
+
+            // Current month days
+            for (let i = 1; i <= lastDay.getDate(); i++) {
+                const date = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), i);
+                const isToday = date.toDateString() === today.toDateString();
+                const dateStr = formatDateForStorage(date);
+                const hasDeadlines = deadlines.some(d => d.date === dateStr);
+                html += createDayElement(date, false, isToday, hasDeadlines);
+            }
+
+            daysContainer.innerHTML = html;
+        }
+
+        function createDayElement(date, otherMonth, isToday, hasDeadline) {
+            const dateStr = formatDateForStorage(date);
+            const dayDeadlines = deadlines.filter(d => d.date === dateStr);
+            
+            let deadlineIndicators = '';
+            if (dayDeadlines.length > 0 && !otherMonth) {
+                deadlineIndicators = `
+                    <div class="absolute bottom-1 right-1 flex gap-0.5">
+                        ${dayDeadlines.slice(0, 3).map(d => `<div class="w-2 h-2 rounded-full ${d.priority === 'high' ? 'bg-red-500' : d.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}"></div>`).join('')}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="calendar-day ${otherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${hasDeadline && !otherMonth ? 'has-deadline' : ''}" onclick="showDayDeadlines('${dateStr}')">
+                    <div class="day-number">${date.getDate()}</div>
+                    ${deadlineIndicators}
+                </div>
+            `;
+        }
+
+        function formatDateForStorage(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function addDeadline() {
+            const title = document.getElementById('deadlineTitle').value.trim();
+            const date = document.getElementById('deadlineDate').value;
+            const priority = document.getElementById('deadlinePriority').value;
+            const phase = document.getElementById('deadlinePhase').value.trim();
+
+            if (!title || !date) {
+                alert('Please enter title and date');
+                return;
+            }
+
+            deadlines.push({
+                id: Date.now(),
+                title,
+                date,
+                priority,
+                phase: phase || 'General',
+                completed: false
+            });
+
+            localStorage.setItem('pf_deadlines', JSON.stringify(deadlines));
+            document.getElementById('deadlineTitle').value = '';
+            document.getElementById('deadlineDate').value = '';
+            document.getElementById('deadlinePhase').value = '';
+            
+            renderCalendar();
+            renderDeadlines();
+        }
+
+        function renderDeadlines() {
+            const list = document.getElementById('deadlinesList');
+            const upcoming = deadlines.filter(d => !d.completed && new Date(d.date) >= new Date()).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (upcoming.length === 0) {
+                list.innerHTML = `<p class="text-gray-400 font-bold italic">No upcoming deadlines.</p>`;
+                return;
+            }
+
+            list.innerHTML = upcoming.slice(0, 10).map(d => `
+                <div class="deadline-item ${d.priority}-priority">
+                    <div>
+                        <div class="font-black uppercase">${escapeHTML(d.title)}</div>
+                        <div class="text-xs font-bold text-gray-500">
+                            ${new Date(d.date).toLocaleDateString()} ${d.phase ? `• ${d.phase}` : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="completeDeadline(${d.id})" class="p-2 border-2 border-black rounded-lg hover:bg-green-100 transition-all">
+                            <span class="material-symbols-outlined text-sm">check</span>
+                        </button>
+                        <button onclick="deleteDeadline(${d.id})" class="p-2 border-2 border-black rounded-lg hover:bg-red-100 transition-all">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function completeDeadline(id) {
+            deadlines = deadlines.map(d => d.id === id ? { ...d, completed: true } : d);
+            localStorage.setItem('pf_deadlines', JSON.stringify(deadlines));
+            renderCalendar();
+            renderDeadlines();
+        }
+
+        function deleteDeadline(id) {
+            deadlines = deadlines.filter(d => d.id !== id);
+            localStorage.setItem('pf_deadlines', JSON.stringify(deadlines));
+            renderCalendar();
+            renderDeadlines();
+        }
+
+        function showDayDeadlines(dateStr) {
+            const dayDeadlines = deadlines.filter(d => d.date === dateStr);
+            if (dayDeadlines.length > 0) {
+                alert(dayDeadlines.map(d => `• ${d.title} (${d.priority})`).join('\n'));
+            }
+        }
+
+        function scheduleStudyPlanDeadlines() {
+            if (!currentPathData || deadlines.some(d => d.phase === 'Auto-generated')) return;
+            
+            const startDate = new Date();
+            currentPathData.phases.forEach((phase, i) => {
+                const deadlineDate = new Date(startDate);
+                deadlineDate.setDate(startDate.getDate() + ((i + 1) * 7));
+                
+                deadlines.push({
+                    id: Date.now() + i + 1000,
+                    title: `${phase.title} Phase`,
+                    date: formatDateForStorage(deadlineDate),
+                    priority: i === 0 ? 'high' : 'medium',
+                    phase: 'Auto-generated',
+                    completed: false
+                });
+            });
+            localStorage.setItem('pf_deadlines', JSON.stringify(deadlines));
+        }
+
+        // --- Skill Heatmap ---
+        function showHeatmap() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('roadmapView').classList.add('hidden');
+            document.getElementById('toolsView').classList.add('hidden');
+            document.getElementById('heatmapView').classList.remove('hidden');
+            renderSkillHeatmap();
+        }
+
+        function renderSkillHeatmap() {
+            const skills = [
+                'HTML', 'CSS', 'JS', 'TS', 'React', 'Vue', 'Svelte', 'Node',
+                'Express', 'Python', 'Go', 'Rust', 'SQL', 'NoSQL', 'GraphQL', 'REST',
+                'Docker', 'K8s', 'AWS', 'GCP', 'Azure', 'CI/CD', 'Testing', 'Security'
+            ];
+            const grid = document.getElementById('heatmapGrid');
+            const saved = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            grid.innerHTML = skills.map(skill => {
+                const level = saved[skill] || 0;
+                return `<div class="skill-tile level-${level}" onclick="setSkillLevel('${skill}', this)" title="${skill}">${skill.substring(0, 3)}</div>`;
+            }).join('');
+        }
+
+        function setSkillLevel(skill, el) {
+            const skills = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            skills[skill] = (skills[skill] || 0) < 5 ? skills[skill] + 1 : 0;
+            localStorage.setItem('pf_skill_levels', JSON.stringify(skills));
+            renderSkillHeatmap();
+        }
+
+        // --- Skill Tree Visualization ---
+        function renderSkillTree() {
+            const svg = document.getElementById('skillTreeSvg');
+            const saved = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            const skills = [
+                { name: "HTML", x: 280, y: 40, prereq: null, unlocked: saved.HTML > 0 },
+                { name: "CSS", x: 180, y: 100, prereq: "HTML", unlocked: saved.CSS > 0 },
+                { name: "JavaScript", x: 380, y: 100, prereq: "HTML", unlocked: saved.JS > 0 },
+                { name: "React", x: 330, y: 180, prereq: "JavaScript", unlocked: saved.React > 0 },
+                { name: "Node.js", x: 430, y: 180, prereq: "JavaScript", unlocked: saved.Node > 0 },
+                { name: "TypeScript", x: 280, y: 100, prereq: "JavaScript", unlocked: saved.TS > 0 },
+                { name: "Database", x: 280, y: 260, prereq: "Node.js", unlocked: saved.SQL > 0 || saved.NoSQL > 0 }
+            ];
+
+            svg.innerHTML = `
+                <line x1="280" y1="40" x2="180" y2="100" stroke="#3b82f6" stroke-width="2" stroke-dasharray="${saved.CSS ? '' : '5,5'}"/>
+                <line x1="280" y1="40" x2="380" y2="100" stroke="#3b82f6" stroke-width="2" stroke-dasharray="${saved.JS ? '' : '5,5'}"/>
+                <line x1="380" y1="100" x2="330" y2="180" stroke="#3b82f6" stroke-width="2"/>
+                <line x1="380" y1="100" x2="430" y2="180" stroke="#3b82f6" stroke-width="2"/>
+                ${skills.map(s => `
+                    <circle cx="${s.x}" cy="${s.y}" r="30" fill="${s.unlocked ? '#3b82f6' : '#e5e7eb'}" stroke="#000" stroke-width="2"/>
+                    <text x="${s.x}" y="${s.y + 5}" text-anchor="middle" class="font-black text-xs" fill="${s.unlocked ? '#fff' : '#000'}">${s.name}</text>
+                `).join('')}
+            `;
+        }
+
+        function showSkillTree() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('roadmapView').classList.add('hidden');
+            document.getElementById('toolsView').classList.add('hidden');
+            document.getElementById('skillTreeView').classList.remove('hidden');
+            renderSkillTree();
+        }
+
+        // --- Code Companion ---
+        function toggleCodeCompanion() {
+            document.getElementById('codeCompanion').classList.toggle('hidden');
+        }
+
+        async function debugCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            const output = document.getElementById('debugOutput');
+            
+            if (!code) return;
+            
+            output.innerHTML = '<p class="animate-pulse">Analyzing code...</p>';
+            
+            try {
+                const res = await fetch('/api/tutor-query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `Find bugs and explain fixes for: ${code.substring(0, 500)}... Provide explanation.`,
+                        role: currentRole || 'Developer',
+                        topic: 'Debugging'
+                    })
+                });
+                const data = await res.json();
+                output.innerHTML = `<div class="font-black text-blue-600 uppercase text-xs mb-2">Fix:</div><div>${data.answer.replace(/\n/g, '<br>')}</div>`;
+                addToVault(`Code Debug: ${code.substring(0, 30)}...`, "#");
+            } catch (err) {
+                output.innerHTML = '<p class="text-red-500">Debug failed</p>';
+            }
+        }
+
+        // --- Focus Music ---
+        function toggleFocusPlayer() {
+            document.getElementById('focusPlayer').classList.toggle('hidden');
+        }
+
+        function playFocusMusic(type) {
+            if (!type) return;
+            const urls = {
+                lofi: 'https://www.youtube.com/embed/5qap5aO2NkI?autoplay=1&loop=1',
+                classical: 'https://www.youtube.com/embed/4bzj_Yh6M7o?autoplay=1&loop=1',
+                ambient: 'https://www.youtube.com/embed/eKFTwJl0rog?autoplay=1&loop=1',
+                focus: 'https://www.youtube.com/embed/p5dluGdZMbg?autoplay=1&loop=1'
+            };
+            const iframe = document.createElement('iframe');
+            iframe.src = urls[type];
+            iframe.style.cssText = 'position:absolute;top:-1000px;width:1px;height:1px;';
+            document.body.appendChild(iframe);
+            setTimeout(() => iframe.remove(), 100);
+        }
+
+        // --- Time Capsule ---
+        function createTimeCapsule() {
+            const note = prompt("Write advice to your future self:");
+            const days = prompt("Open in how many days?");
+            if (note && days) {
+                const capsules = JSON.parse(localStorage.getItem('pf_capsules') || '[]');
+                capsules.push({
+                    id: Date.now(),
+                    text: note,
+                    openDate: Date.now() + parseInt(days) * 24 * 60 * 60 * 1000,
+                    created: Date.now()
+                });
+                localStorage.setItem('pf_capsules', JSON.stringify(capsules));
+                alert('Capsule created!');
+            }
+        }
+
+        function checkCapsules() {
+            const capsules = JSON.parse(localStorage.getItem('pf_capsules') || '[]');
+            const ready = capsules.filter(c => c.openDate <= Date.now() && !c.opened);
+            if (ready.length) {
+                ready.forEach(c => {
+                    alert(`📦 Time Capsule: ${c.text}`);
+                    c.opened = true;
+                });
+                localStorage.setItem('pf_capsules', JSON.stringify(capsules));
+            }
+        }
+
+        // --- Learning Velocity ---
+        function trackSession(duration) {
+            const sessions = JSON.parse(localStorage.getItem('pf_sessions') || '[]');
+            sessions.push({
+                id: Date.now(),
+                duration: duration || 25,
+                timestamp: Date.now(),
+                topic: currentRole || 'General'
+            });
+            localStorage.setItem('pf_sessions', JSON.stringify(sessions.slice(-100)));
+            updateVelocityBadge();
+        }
+
+        function updateVelocityBadge() {
+            const sessions = JSON.parse(localStorage.getItem('pf_sessions') || '[]');
+            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            const weekly = sessions.filter(s => s.timestamp > weekAgo);
+            const streak = calculateStreak(weekly);
+            const badge = document.getElementById('velocityBadge');
+            if (badge) {
+                badge.innerHTML = `<span class="bg-blue-600 text-white px-3 py-1 rounded-full font-black text-xs">🔥 ${streak} day streak</span>`;
+            }
+        }
+
+        function calculateStreak(sessions) {
+            const days = new Set(sessions.map(s => new Date(s.timestamp).toDateString())).size;
+            return Math.min(days, 7);
+        }
+
+        // --- Time Warp (Study History Timeline) ---
+        function showTimeWarp() {
+            const history = JSON.parse(localStorage.getItem('pf_history') || '[]');
+            const output = document.getElementById('prepOutput');
+            if (output) {
+                output.innerHTML = `<div class="space-y-2">
+                    <h5 class="font-black">Study History Timeline</h5>
+                    ${history.slice(-5).map((h, i) => `
+                        <div class="p-2 border-2 border-black rounded-xl">
+                            <span class="font-black">${h.role}</span> - ${h.date}
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+            showTools();
+        }
+
+        // --- Skill Comparison ---
+        function compareSkills(skill) {
+            const saved = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            const level = saved[skill] || 0;
+            const benchmark = 3; // Industry average
+            const output = document.getElementById('prepOutput');
+            if (output) {
+                output.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-4xl font-black mb-2">Your ${skill}</div>
+                        <div class="text-6xl text-blue-600 font-black">${level}/5</div>
+                        <div class="text-lg font-bold mt-2">Industry Avg: ${benchmark}/5</div>
+                        <div class="mt-4 text-${level >= benchmark ? 'green' : 'red'}-600 font-black">
+                            ${level >= benchmark ? '✓ Above Average' : '↑ Needs Practice'}
+                        </div>
+                    </div>
+                `;
+            }
+            showTools();
+        }
+
+        // --- Milestone Celebration ---
+        function celebrateMilestone(phaseIndex) {
+            if (localStorage.getItem(`pf_celebrated_${phaseIndex}`) === 'true') return;
+            
+            const confetti = Array(50).fill().map((_, i) => 
+                `<div class="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping" style="left:${Math.random()*100}%;top:${Math.random()*100}%"></div>`
+            ).join('');
+            const el = document.createElement('div');
+            el.innerHTML = confetti;
+            el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+            
+            setTimeout(() => {
+                addXP(50);
+                localStorage.setItem(`pf_celebrated_${phaseIndex}`, 'true');
+                updateAchievements();
+            }, 1000);
+        }
+
+        // --- XP System ---
+        function addXP(amount) {
+            const xp = parseInt(localStorage.getItem('pf_xp') || '0') + amount;
+            localStorage.setItem('pf_xp', xp.toString());
+            const level = Math.floor(xp / 100) + 1;
+            localStorage.setItem('pf_level', level.toString());
+        }
+
+        function updateAchievements() {
+            const history = JSON.parse(localStorage.getItem('pf_history') || '[]');
+            const sessions = JSON.parse(localStorage.getItem('pf_sessions') || '[]');
+            const vault = JSON.parse(localStorage.getItem('pf_vault') || '[]');
+            
+            const badges = {
+                firstRoadmap: history.length >= 1,
+                streak: sessions.length >= 7,
+                questions: sessions.length >= 10,
+                vault: vault.length >= 5
+            };
+            
+            localStorage.setItem('pf_badges', JSON.stringify(badges));
+        }
+
         window.onload = () => {
             updateCollectionsUI();
             updateVaultUI();
             updateMasteryAnalytics();
+            updateVelocityBadge();
+            checkCapsules();
+            updateAchievements();
             const savedTheme = localStorage.getItem('pf_theme');
             if(savedTheme === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -1362,6 +2047,92 @@ node.innerHTML = `
             const progressCard = document.getElementById('progressCard');
             if(progressCard && currentPathData) updateProgressUI();
         };
+
+        // --- Quick Action Buttons ---
+        const quickActions = [
+            { label: 'Calendar', icon: 'calendar_month', action: 'toggleCalendar' },
+            { label: 'Heatmap', icon: 'grid_view', action: 'showHeatmap' },
+            { label: 'Debugger', icon: 'bug_report', action: 'toggleCodeCompanion' },
+            { label: 'Music', icon: 'music_note', action: 'toggleFocusPlayer' },
+            { label: 'Capsule', icon: 'schedule', action: 'createTimeCapsule' }
+        ];
+
+        function renderQuickActions() {
+            const bar = document.getElementById('quickActionBar');
+            if (!bar) return;
+            bar.innerHTML = quickActions.map(a => `
+                <button onclick="${a.action}()" class="p-2 border-2 border-black rounded-xl hover:bg-gray-100 transition-all" title="${a.label}">
+                    <span class="material-symbols-outlined text-sm">${a.icon}</span>
+                </button>
+            `).join('');
+        }
+
+        // --- Keyboard Shortcuts ---
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'k') { toggleCalendar(); e.preventDefault(); }
+            if (e.ctrlKey && e.key === 'h') { showHeatmap(); e.preventDefault(); }
+            if (e.ctrlKey && e.key === 'd') { toggleCodeCompanion(); e.preventDefault(); }
+            if (e.ctrlKey && e.key === ' ') { toggleTimer(); e.preventDefault(); }
+        });
+
+        // --- Quick Search ---
+        function quickSearch(query) {
+            const results = document.querySelectorAll('.topic-box');
+            results.forEach(el => {
+                el.style.display = el.innerText.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // --- Export Enhanced ---
+        function exportEnhanced() {
+            const data = {
+                roadmap: currentPathData,
+                vault: JSON.parse(localStorage.getItem('pf_vault') || '[]'),
+                deadlines: deadlines,
+                skills: JSON.parse(localStorage.getItem('pf_skill_levels') || '{}'),
+                sessions: JSON.parse(localStorage.getItem('pf_sessions') || '[]'),
+                xp: localStorage.getItem('pf_xp'),
+                level: localStorage.getItem('pf_level'),
+                exportDate: new Date().toISOString()
+            };
+            downloadTextFile('PathFinder_Backup.json', JSON.stringify(data, null, 2));
+        }
+
+        // --- Skill Comparison ---
+        async function compareSkillWithBenchmark(skill) {
+            const saved = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            const level = saved[skill] || 0;
+            
+            try {
+                const res = await fetch('/api/tutor-query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `What is the industry benchmark for ${skill} skill? Provide level 1-5 rating and how to improve.`,
+                        role: currentRole
+                    })
+                });
+                const data = await res.json();
+                alert(`${skill} Comparison:\nYour Level: ${level}/5\n\n${data.answer}`);
+            } catch (err) {
+                alert('Could not fetch benchmark data');
+            }
+        }
+
+        // --- Smart Recommendations ---
+        function getSmartRecommendations() {
+            const history = JSON.parse(localStorage.getItem('pf_history') || '[]');
+            const skills = JSON.parse(localStorage.getItem('pf_skill_levels') || '{}');
+            
+            const weakSkills = Object.entries(skills)
+                .filter(([_, level]) => level < 3)
+                .map(([skill]) => skill);
+                
+            if (weakSkills.length > 0) {
+                return `Focus on: ${weakSkills.slice(0, 3).join(', ')}`;
+            }
+            return 'Keep mastering your roadmap!';
+        }
 
         // Download functionality
         const downloadBtn = document.getElementById('downloadBtn');
