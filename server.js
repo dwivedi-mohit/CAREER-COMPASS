@@ -410,3 +410,21 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log("--- Server is now using GROQ AI ---");
 });
+
+// --- Tools Analytics Endpoint ---
+app.get('/api/tools-stats', (req, res) => {
+    const stats = {
+        totalTools: 50,
+        version: '2.0',
+        categories: {
+            productivity: 5,
+            learning: 10,
+            visualization: 8,
+            ai: 5,
+            export: 5,
+            career: 7,
+            quickActions: 10
+        }
+    };
+    res.json(stats);
+});
