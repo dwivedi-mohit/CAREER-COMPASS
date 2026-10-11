@@ -3,10 +3,22 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>AjayPath AI - Career Workstation</title>
+    <title>CAREER COMPASS - Neo4j Career Navigator & Skill Gap Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script
+      async
+      crossorigin="anonymous"
+      data-clerk-publishable-key="pk_test_cGxlYXNpbmctbW9uaXRvci00NTEwLmNsZXJrLmFjY291bnRzLmRldiQ"
+      src="https://pleasing-monitor-4510.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+      type="text/javascript"></script>
+    <script src="/d3.v7.min.js"></script>
+    <script>
+        if (!window.d3) {
+            document.write('<script src="https://d3js.org/d3.v7.min.js"><\\/script>');
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
@@ -103,6 +115,38 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Graph Visualizer Styling */
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.35); opacity: 0.15; }
+            100% { transform: scale(1); opacity: 0.85; }
+        }
+        .pulse-ring {
+            animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            transform-origin: center;
+        }
+        .graph-node {
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .graph-node:hover {
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.4));
+        }
+        .graph-node.dimmed, .graph-link.dimmed {
+            opacity: 0.15 !important;
+        }
+        .graph-node.highlighted {
+            opacity: 1 !important;
+            filter: drop-shadow(0 0 12px #2563eb) !important;
+        }
+        .graph-link {
+            transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
+        }
+        .graph-filter-btn.active {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
         
         /* Mentor Widget */
         .mentor-widget {
@@ -362,17 +406,17 @@
     <!-- Header -->
     <header class="bg-white border-b-8 border-black py-8 px-10 flex justify-between items-center sticky top-0 z-[100]">
         <div class="flex items-center gap-3 cursor-pointer" onclick="backToLibrary()">
-            <span class="material-symbols-outlined text-4xl font-black text-blue-600">signpost</span>
-            <h1 class="text-3xl font-black italic tracking-tighter">AjayPath <span class="text-blue-600">AI</span></h1>
+            <span class="material-symbols-outlined text-4xl font-black text-blue-600">explore</span>
+            <h1 class="text-3xl font-black italic tracking-tighter">CAREER <span class="text-blue-600">COMPASS</span></h1>
         </div>
-        <div class="flex gap-6">
-            <button onclick="showTools()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
+        <div class="flex gap-4 items-center">
+            <button onclick="showTools()" class="flex items-center gap-3 px-6 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-sm">
                 <span class="material-symbols-outlined text-xl">construction</span> TOOLS
             </button>
-            <button onclick="showToolLauncher()" class="flex items-center gap-3 px-6 py-2 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-sm">
-                <span class="material-symbols-outlined">bolt</span> TOOL LAUNCHER
+            <button onclick="showToolLauncher()" class="flex items-center gap-2 px-4 py-2 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-xs">
+                <span class="material-symbols-outlined text-base">bolt</span> LAUNCHER
             </button>
-            <button onclick="toggleCollections()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
+            <button onclick="toggleCollections()" class="flex items-center gap-2 px-6 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-sm">
                 <span class="material-symbols-outlined text-xl">library_books</span> COLLECTION
             </button>
             <div id="quickActionBar" class="flex gap-2">
@@ -389,9 +433,23 @@
                     <span class="material-symbols-outlined text-sm">music_note</span>
                 </button>
             </div>
-            <button id="darkModeToggle" onclick="toggleDarkMode()" class="flex items-center gap-3 px-8 py-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
+            <button id="darkModeToggle" onclick="toggleDarkMode()" class="flex items-center p-3 border-4 border-black rounded-2xl font-black hover:bg-black hover:text-white transition-all shadow-[6px_6px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1">
                 <span id="darkModeIcon" class="material-symbols-outlined text-xl">dark_mode</span>
             </button>
+            <!-- Clerk Auth Controls -->
+            <div id="authControls" class="flex items-center gap-2 pl-2 border-l-4 border-black">
+                <div id="signedOutControls" class="flex items-center gap-2">
+                    <button id="signInBtn" onclick="handleSignIn()" class="flex items-center gap-1 px-4 py-2 border-3 border-black rounded-xl font-black hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-sm cursor-pointer">
+                        <span class="material-symbols-outlined text-base">login</span> SIGN IN
+                    </button>
+                    <button id="signUpBtn" onclick="handleSignUp()" class="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white border-3 border-black rounded-xl font-black hover:bg-blue-700 transition-all shadow-[4px_4px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 text-sm cursor-pointer">
+                        <span class="material-symbols-outlined text-base">person_add</span> SIGN UP
+                    </button>
+                </div>
+                <div id="signedInControls" class="flex items-center gap-2 hidden">
+                    <div id="clerkUserButton"></div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -432,17 +490,63 @@
     <!-- MAIN LANDING VIEW -->
     <div id="mainView">
         <!-- Hero Section -->
-        <section id="searchSection" class="max-w-5xl mx-auto text-center py-32 px-10">
-            <h2 class="text-8xl font-black mb-10 uppercase italic leading-[0.9] tracking-tighter">
+        <section id="searchSection" class="max-w-5xl mx-auto text-center py-24 px-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-black rounded-full font-black text-xs uppercase tracking-wider mb-8 shadow-[3px_3px_0px_#000]">
+                <span class="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></span>
+                <span id="neo4jHeroStatus">Neo4j Graph Career Navigator</span>
+            </div>
+            <h2 class="text-8xl font-black mb-8 uppercase italic leading-[0.9] tracking-tighter">
                 Chart your <br/><span class="text-blue-600">future.</span>
             </h2>
-            <p class="text-gray-500 font-bold text-2xl mb-16 max-w-2xl mx-auto leading-relaxed">
-                Generate custom branching roadmaps and master any professional skill with AI workstation.
+            <p class="text-gray-500 font-bold text-2xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                Graph-powered career navigation & skill-gap intelligence. Map your existing skills, reveal missing prerequisites, and navigate your path with Neo4j.
             </p>
             
-            <div class="flex flex-col md:flex-row gap-6 p-4 border-8 border-black rounded-[40px] bg-white shadow-[20px_20px_0px_#000] max-w-3xl mx-auto focus-within:shadow-[20px_20px_0px_#3b82f6] transition-all">
-                <input id="roleInput" type="text" placeholder="e.g. Senior Software Architect" class="flex-grow border-none px-8 py-5 text-2xl font-black outline-none rounded-3xl"/>
-                <button onclick="generateRoadmap()" class="bg-black text-white px-12 py-5 rounded-3xl font-black text-xl hover:bg-gray-800 transition-all shadow-[8px_8px_0px_#3b82f6] active:translate-y-1 active:shadow-none uppercase">Architect</button>
+            <div class="border-8 border-black rounded-[40px] bg-white shadow-[20px_20px_0px_#000] max-w-4xl mx-auto p-8 text-left transition-all">
+                <!-- Target Career Selection -->
+                <div class="mb-6">
+                    <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">1. Select Target Career Goal</label>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input id="roleInput" type="text" placeholder="e.g. Java Backend Developer, Frontend Developer, Data Analyst, AI Engineer..." class="flex-grow border-4 border-black px-6 py-4 text-xl font-black outline-none rounded-2xl shadow-[4px_4px_0px_#000] focus:ring-4 ring-blue-200 transition-all"/>
+                    </div>
+                    <!-- Quick Career Pills -->
+                    <div class="flex flex-wrap gap-2 mt-3 items-center">
+                        <span class="text-xs font-bold text-gray-400">Popular:</span>
+                        <button type="button" onclick="selectRole('Java Backend Developer')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">☕ Java Backend</button>
+                        <button type="button" onclick="selectRole('Frontend Developer')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">⚛️ Frontend</button>
+                        <button type="button" onclick="selectRole('Data Analyst')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">📊 Data Analyst</button>
+                        <button type="button" onclick="selectRole('AI Engineer')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">🤖 AI Engineer</button>
+                        <button type="button" onclick="selectRole('DevOps Engineer')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">🚀 DevOps</button>
+                        <button type="button" onclick="selectRole('Full Stack Developer')" class="px-3 py-1.5 border-2 border-black rounded-xl font-bold text-xs bg-gray-50 hover:bg-[#ffe57f] shadow-[2px_2px_0px_#000] active:translate-y-0.5 transition-all">⚡ Full Stack</button>
+                    </div>
+                </div>
+
+                <!-- Current Skills & Proficiency Input -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-black uppercase tracking-wider text-gray-500">2. Your Current Skills & Proficiency Level</label>
+                        <span class="text-xs font-bold text-blue-600 cursor-pointer hover:underline" onclick="toggleSkillSuggestions()">⚡ Suggested Skills</span>
+                    </div>
+                    <input id="skillsInput" type="text" placeholder="e.g. Java: Intermediate, SQL: Advanced, Docker: Beginner" class="w-full border-4 border-black px-6 py-4 text-lg font-bold outline-none rounded-2xl shadow-[4px_4px_0px_#000] focus:ring-4 ring-blue-200 transition-all"/>
+                    
+                    <!-- Quick Skill Chips based on selection -->
+                    <div id="skillSuggestionsContainer" class="flex flex-wrap gap-2 mt-3 items-center">
+                        <span class="text-xs font-bold text-gray-400">Quick-Add:</span>
+                        <div id="quickSkillChips" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4 border-t-2 border-gray-100">
+                    <div class="flex items-center gap-2 text-xs font-black uppercase text-gray-500">
+                        <span id="neo4jIndicatorDot" class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+                        <span id="neo4jStatusText">Neo4j Graph Engine</span>
+                    </div>
+                    <button onclick="generateRoadmap()" class="w-full sm:w-auto bg-black text-white px-10 py-5 rounded-2xl font-black text-xl hover:bg-gray-800 transition-all shadow-[8px_8px_0px_#3b82f6] active:translate-y-1 active:shadow-none uppercase flex items-center justify-center gap-3">
+                        <span class="material-symbols-outlined text-2xl text-blue-400">hub</span>
+                        Analyze Skill Gap & Architect Path
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -646,7 +750,7 @@
                 <!-- FAQ 3 -->
                 <div class="border-8 border-black rounded-[32px] bg-white shadow-[12px_12px_0px_#000] overflow-hidden">
                     <button onclick="toggleFAQ(3)" class="w-full p-10 flex justify-between items-center text-left hover:bg-blue-50 transition-colors">
-                        <span class="text-2xl font-black uppercase tracking-tighter">Can I use AjayPath for non-tech roles?</span>
+                        <span class="text-2xl font-black uppercase tracking-tighter">Can I use Career Compass for non-tech roles?</span>
                         <span id="faq-icon-3" class="material-symbols-outlined text-4xl font-black">add</span>
                     </button>
                     <div id="faq-content-3" class="hidden px-10 pb-10">
@@ -779,6 +883,113 @@
                 <button id="downloadBtn" class="px-8 py-4 bg-green-500 text-white border-4 border-black rounded-2xl font-black hover:bg-green-600 shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1 transition-all uppercase">Save Image</button>
             </div>
         </div>
+        <!-- Neo4j Personalized Knowledge Graph Visualizer (CENTERPIECE) -->
+        <div id="graphVisualizerCard" class="hidden mb-12 p-8 bg-white border-8 border-black rounded-[40px] shadow-[20px_20px_0px_#000]">
+            <!-- Header with Title, Live Status, and View Mode Toggles -->
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pb-6 border-b-6 border-black">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-400 text-black border-2 border-black rounded-full font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000]">
+                            <span class="w-2.5 h-2.5 bg-black rounded-full animate-pulse"></span>
+                            Interactive Neo4j Graph
+                        </span>
+                        <span class="text-xs font-black uppercase text-gray-500 tracking-wider">Topological Knowledge Canvas</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-black uppercase italic tracking-tighter flex items-center gap-3">
+                        Personalized Career <span class="text-blue-600 underline">Knowledge Graph</span>
+                    </h2>
+                    <p class="text-gray-600 font-bold mt-1 text-sm">
+                        Live graph model: <code class="bg-gray-100 px-2 py-0.5 rounded font-mono text-xs">(Person)-[:TARGETS]->(JobRole)</code>, <code class="bg-gray-100 px-2 py-0.5 rounded font-mono text-xs">[:REQUIRES]</code>, <code class="bg-gray-100 px-2 py-0.5 rounded font-mono text-xs">[:DEPENDS_ON]</code>, and <code class="bg-gray-100 px-2 py-0.5 rounded font-mono text-xs">[:TAUGHT_BY]</code>.
+                    </p>
+                </div>
+
+                <!-- View Mode Tabs & Graph Action Controls -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex border-4 border-black rounded-2xl overflow-hidden shadow-[4px_4px_0px_#000] bg-white">
+                        <button id="viewTabGraph" onclick="switchGraphViewTab('graph')" class="px-5 py-2.5 font-black text-xs uppercase tracking-wider bg-yellow-300 text-black border-r-2 border-black flex items-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-sm">hub</span> Graph View
+                        </button>
+                        <button id="viewTabTimeline" onclick="switchGraphViewTab('timeline')" class="px-5 py-2.5 font-black text-xs uppercase tracking-wider bg-white hover:bg-gray-100 text-black border-r-2 border-black flex items-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-sm">timeline</span> Pathway
+                        </button>
+                        <button id="viewTabCypher" onclick="switchGraphViewTab('cypher')" class="px-5 py-2.5 font-black text-xs uppercase tracking-wider bg-white hover:bg-gray-100 text-black flex items-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-sm">terminal</span> Cypher
+                        </button>
+                    </div>
+
+                    <!-- Zoom / Center Controls -->
+                    <div class="flex gap-2">
+                        <button onclick="zoomGraphIn()" title="Zoom In" class="w-10 h-10 border-3 border-black rounded-xl bg-white hover:bg-gray-100 font-black flex items-center justify-center shadow-[3px_3px_0px_#000] active:translate-y-0.5">
+                            <span class="material-symbols-outlined text-base">zoom_in</span>
+                        </button>
+                        <button onclick="zoomGraphOut()" title="Zoom Out" class="w-10 h-10 border-3 border-black rounded-xl bg-white hover:bg-gray-100 font-black flex items-center justify-center shadow-[3px_3px_0px_#000] active:translate-y-0.5">
+                            <span class="material-symbols-outlined text-base">zoom_out</span>
+                        </button>
+                        <button onclick="resetGraphZoom()" title="Reset / Center Graph" class="w-10 h-10 border-3 border-black rounded-xl bg-white hover:bg-gray-100 font-black flex items-center justify-center shadow-[3px_3px_0px_#000] active:translate-y-0.5">
+                            <span class="material-symbols-outlined text-base">filter_center_focus</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Pills Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-4 py-4 border-b-2 border-gray-100">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-black uppercase text-gray-400 mr-2">Filters:</span>
+                    <button onclick="filterGraphNodes('all')" class="graph-filter-btn active px-3 py-1 text-xs font-black rounded-xl border-2 border-black bg-black text-white shadow-[2px_2px_0px_#000]">All Nodes</button>
+                    <button onclick="filterGraphNodes('missing')" class="graph-filter-btn px-3 py-1 text-xs font-black rounded-xl border-2 border-black bg-white hover:bg-gray-50 shadow-[2px_2px_0px_#000]">Missing Gaps Only</button>
+                    <button onclick="filterGraphNodes('prereq')" class="graph-filter-btn px-3 py-1 text-xs font-black rounded-xl border-2 border-black bg-white hover:bg-gray-50 shadow-[2px_2px_0px_#000]">Prerequisite Chains</button>
+                    <button onclick="filterGraphNodes('resources')" class="graph-filter-btn px-3 py-1 text-xs font-black rounded-xl border-2 border-black bg-white hover:bg-gray-50 shadow-[2px_2px_0px_#000]">Learning Resources</button>
+                </div>
+                <div class="text-xs font-bold text-gray-500">
+                    💡 <span class="font-bold">Tip:</span> Drag nodes, zoom with scroll, or click any node to open details & 5-day study plan.
+                </div>
+            </div>
+
+            <!-- Main Interactive SVG Container -->
+            <div id="graphCanvasWrapper" class="relative w-full h-[620px] bg-[#fdfdfc] rounded-3xl overflow-hidden border-4 border-black mt-6 shadow-[inner_0_0_20px_rgba(0,0,0,0.05)]">
+                <svg id="interactiveGraphSvg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
+                
+                <!-- Quick Floating Node Inspector Overlay on Hover/Click -->
+                <div id="graphTooltip" class="pointer-events-none absolute hidden z-30 p-4 bg-white border-3 border-black rounded-2xl shadow-[6px_6px_0px_#000] text-xs max-w-xs transition-opacity duration-150"></div>
+
+                <!-- Cypher Query Overlay Container (When Cypher Tab Active) -->
+                <div id="graphCypherTab" class="hidden absolute inset-0 bg-[#0f172a] text-emerald-400 p-8 overflow-y-auto font-mono text-xs z-20"></div>
+            </div>
+
+            <!-- Graph Legend Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t-4 border-black">
+                <div class="flex items-center gap-2 p-3 bg-yellow-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-yellow-400 border border-black flex-shrink-0"></span>
+                    <span class="truncate">Target Career (JobRole)</span>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-green-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-green-500 border border-black flex-shrink-0"></span>
+                    <span class="truncate">Mastered Skill (HAS_SKILL)</span>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-amber-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-amber-500 border border-black animate-ping flex-shrink-0"></span>
+                    <span class="truncate">Recommended Next ⚡</span>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-purple-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-purple-600 border border-black flex-shrink-0"></span>
+                    <span class="truncate">Prerequisite (DEPENDS_ON)</span>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-blue-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-blue-600 border border-black flex-shrink-0"></span>
+                    <span class="truncate">Core Skill (REQUIRES)</span>
+                </div>
+                <div class="flex items-center gap-2 p-3 bg-teal-100 border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_#000]">
+                    <span class="w-4 h-4 rounded-full bg-teal-500 border border-black flex-shrink-0"></span>
+                    <span class="truncate">Resource (TAUGHT_BY)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Neo4j Skill-Gap Intelligence Summary -->
+        <div id="skillGapSummaryCard" class="hidden mb-12 p-8 bg-white border-8 border-black rounded-[40px] shadow-[15px_15px_0px_#000]"></div>
+
+        <!-- Mastery Progress -->
         <div id="progressCard" class="hidden mb-12 p-8 bg-white border-8 border-black rounded-[40px] shadow-[15px_15px_0px_#000]">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-3xl font-black uppercase tracking-tighter">Mastery Progress</h3>
@@ -789,6 +1000,7 @@
             </div>
             <div id="phaseList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
+
         <div id="roadmapContent" class="roadmap-canvas"></div>
     </div>
 
@@ -1031,8 +1243,8 @@
         <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
             <div class="col-span-1 md:col-span-1">
                 <div class="flex items-center gap-3 mb-10">
-                    <span class="material-symbols-outlined text-4xl text-blue-400">signpost</span>
-                    <h2 class="text-3xl font-black italic tracking-tighter">AjayPath <span class="text-blue-400">AI</span></h2>
+                    <span class="material-symbols-outlined text-4xl text-blue-400">explore</span>
+                    <h2 class="text-3xl font-black italic tracking-tighter">CAREER <span class="text-blue-400">COMPASS</span></h2>
                 </div>
                 <p class="text-gray-400 font-bold text-lg leading-relaxed mb-10">The world's most advanced career workstation. Architecting your future with precision AI intelligence.</p>
                 <div class="flex gap-6">
@@ -1104,20 +1316,598 @@
             document.getElementById('overlay').classList.remove('open');
         }
 
+        // --- Neo4j Career Navigator & Skill Gap Agent ---
+        const CAREER_SKILL_SUGGESTIONS = {
+            'Java Backend Developer': ['Java: Intermediate', 'SQL: Intermediate', 'Git: Beginner', 'Docker: Beginner', 'Spring Boot: Beginner'],
+            'Frontend Developer': ['HTML & CSS: Advanced', 'JavaScript: Intermediate', 'React: Beginner', 'Tailwind: Intermediate', 'TypeScript: Beginner'],
+            'Data Analyst': ['Excel: Advanced', 'SQL: Intermediate', 'Python: Beginner', 'Tableau: Beginner', 'Pandas: Beginner'],
+            'AI Engineer': ['Python: Advanced', 'Linear Algebra: Intermediate', 'Scikit-Learn: Beginner', 'PyTorch: Beginner'],
+            'DevOps Engineer': ['Linux: Intermediate', 'Docker: Intermediate', 'Git: Intermediate', 'AWS: Beginner'],
+            'Full Stack Developer': ['JavaScript: Advanced', 'React: Intermediate', 'Node.js: Intermediate', 'SQL: Beginner']
+        };
+
+        function selectRole(roleName) {
+            const roleInput = document.getElementById('roleInput');
+            if (roleInput) {
+                roleInput.value = roleName;
+                updateSkillSuggestions(roleName);
+            }
+        }
+
+        function updateSkillSuggestions(roleName) {
+            const chipsContainer = document.getElementById('quickSkillChips');
+            if (!chipsContainer) return;
+            chipsContainer.innerHTML = '';
+
+            const suggestions = CAREER_SKILL_SUGGESTIONS[roleName] || ['Git: Intermediate', 'SQL: Beginner', 'Docker: Beginner'];
+            suggestions.forEach(item => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'px-3 py-1 bg-white border-2 border-black rounded-lg text-xs font-bold hover:bg-yellow-200 transition-all shadow-[2px_2px_0px_#000] active:translate-y-0.5';
+                chip.innerText = `+ ${item}`;
+                chip.onclick = () => addSkillToInput(item);
+                chipsContainer.appendChild(chip);
+            });
+        }
+
+        function toggleSkillSuggestions() {
+            const role = (document.getElementById('roleInput')?.value || '').trim() || 'Java Backend Developer';
+            updateSkillSuggestions(role);
+        }
+
+        function addSkillToInput(skillText) {
+            const input = document.getElementById('skillsInput');
+            if (!input) return;
+            const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (!current.some(c => c.toLowerCase().includes(skillText.split(':')[0].toLowerCase()))) {
+                current.push(skillText);
+                input.value = current.join(', ');
+            }
+        }
+
+        async function checkNeo4jStatus() {
+            try {
+                const res = await fetch('/api/neo4j/status');
+                const status = await res.json();
+                const badge = document.getElementById('neo4jStatusText');
+                const dot = document.getElementById('neo4jIndicatorDot');
+                const heroStatus = document.getElementById('neo4jHeroStatus');
+                if (status.mode === 'neo4j' && status.isConnected) {
+                    if (badge) badge.innerText = 'Connected to Neo4j Graph';
+                    if (dot) dot.className = 'w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse';
+                    if (heroStatus) heroStatus.innerText = 'Neo4j Graph Database Connected';
+                } else {
+                    if (badge) badge.innerText = 'Neo4j Demo Graph Engine';
+                    if (dot) dot.className = 'w-2.5 h-2.5 bg-blue-500 rounded-full';
+                    if (heroStatus) heroStatus.innerText = 'Neo4j Demo Graph Engine Active';
+                }
+            } catch (e) {
+                console.warn('Could not query Neo4j status:', e);
+            }
+        }
+
         // --- Roadmap Generation ---
         async function generateRoadmap() {
-            const role = document.getElementById('roleInput').value.trim();
-            if(!role) return alert("Define a career goal first!");
-            await processRoadmap(role);
+            const role = (document.getElementById('roleInput')?.value || '').trim();
+            const skills = document.getElementById('skillsInput') ? document.getElementById('skillsInput').value.trim() : '';
+            if(!role) return alert("Select or define a career goal first!");
+            await processRoadmap(role, skills);
         }
 
         async function quickGenerate(role) {
-            await processRoadmap(role);
+            selectRole(role);
+            const skills = document.getElementById('skillsInput') ? document.getElementById('skillsInput').value.trim() : '';
+            await processRoadmap(role, skills);
         }
 
-        async function processRoadmap(role) {
+        // --- Interactive Personalized Knowledge Graph Engine (Neo4j Force-Directed) ---
+        let currentGraphSimulation = null;
+        let currentGraphZoom = null;
+        let currentGraphSvg = null;
+        let currentGraphData = null;
+        let activeGraphFilter = 'all';
+
+        function switchGraphViewTab(tab) {
+            const btnGraph = document.getElementById('viewTabGraph');
+            const btnTimeline = document.getElementById('viewTabTimeline');
+            const btnCypher = document.getElementById('viewTabCypher');
+            const svgEl = document.getElementById('interactiveGraphSvg');
+            const cypherEl = document.getElementById('graphCypherTab');
+            const roadmapEl = document.getElementById('roadmapContent');
+
+            [btnGraph, btnTimeline, btnCypher].forEach(b => {
+                if (b) {
+                    b.classList.remove('bg-yellow-300', 'font-black');
+                    b.classList.add('bg-white', 'hover:bg-gray-100');
+                }
+            });
+
+            if (tab === 'graph') {
+                if (btnGraph) {
+                    btnGraph.classList.add('bg-yellow-300', 'font-black');
+                    btnGraph.classList.remove('bg-white', 'hover:bg-gray-100');
+                }
+                if (svgEl) svgEl.classList.remove('hidden');
+                if (cypherEl) cypherEl.classList.add('hidden');
+                document.getElementById('graphVisualizerCard')?.scrollIntoView({ behavior: 'smooth' });
+            } else if (tab === 'timeline') {
+                if (btnTimeline) {
+                    btnTimeline.classList.add('bg-yellow-300', 'font-black');
+                    btnTimeline.classList.remove('bg-white', 'hover:bg-gray-100');
+                }
+                roadmapEl?.scrollIntoView({ behavior: 'smooth' });
+            } else if (tab === 'cypher') {
+                if (btnCypher) {
+                    btnCypher.classList.add('bg-yellow-300', 'font-black');
+                    btnCypher.classList.remove('bg-white', 'hover:bg-gray-100');
+                }
+                if (svgEl) svgEl.classList.add('hidden');
+                if (cypherEl) cypherEl.classList.remove('hidden');
+            }
+        }
+
+        function zoomGraphIn() {
+            if (currentGraphSvg && currentGraphZoom) {
+                currentGraphSvg.transition().duration(300).call(currentGraphZoom.scaleBy, 1.3);
+            }
+        }
+
+        function zoomGraphOut() {
+            if (currentGraphSvg && currentGraphZoom) {
+                currentGraphSvg.transition().duration(300).call(currentGraphZoom.scaleBy, 0.7);
+            }
+        }
+
+        function resetGraphZoom() {
+            if (currentGraphSvg && currentGraphZoom) {
+                currentGraphSvg.transition().duration(500).call(currentGraphZoom.transform, d3.zoomIdentity);
+            }
+        }
+
+        function filterGraphNodes(type) {
+            activeGraphFilter = type;
+            document.querySelectorAll('.graph-filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-black', 'text-white');
+                btn.classList.add('bg-white', 'text-black');
+            });
+            event.target.classList.add('active', 'bg-black', 'text-white');
+            event.target.classList.remove('bg-white', 'text-black');
+
+            if (!currentGraphData || !window.d3) return;
+
+            const svg = d3.select('#interactiveGraphSvg');
+            const nodes = svg.selectAll('.graph-node');
+            const links = svg.selectAll('.graph-link');
+            const labels = svg.selectAll('.edge-label');
+
+            if (type === 'all') {
+                nodes.classed('dimmed', false);
+                links.classed('dimmed', false);
+                labels.classed('dimmed', false);
+            } else if (type === 'missing') {
+                nodes.classed('dimmed', d => !(d.group === 'missing' || d.group === 'next' || d.group === 'role'));
+                links.classed('dimmed', d => d.type !== 'REQUIRES');
+                labels.classed('dimmed', d => d.type !== 'REQUIRES');
+            } else if (type === 'prereq') {
+                nodes.classed('dimmed', d => !(d.group === 'prereq' || d.type === 'Skill'));
+                links.classed('dimmed', d => d.type !== 'DEPENDS_ON');
+                labels.classed('dimmed', d => d.type !== 'DEPENDS_ON');
+            } else if (type === 'resources') {
+                nodes.classed('dimmed', d => !(d.group === 'resource' || d.type === 'Skill'));
+                links.classed('dimmed', d => d.type !== 'TAUGHT_BY');
+                labels.classed('dimmed', d => d.type !== 'TAUGHT_BY');
+            }
+        }
+
+        function copyCypherToClipboard() {
+            const cypherPre = document.querySelector('#graphCypherTab pre');
+            if (cypherPre) {
+                navigator.clipboard.writeText(cypherPre.innerText).then(() => {
+                    alert('✅ Cypher query copied to clipboard!');
+                }).catch(() => {
+                    alert('Cypher query:\n' + cypherPre.innerText);
+                });
+            }
+        }
+
+        function renderPersonalizedKnowledgeGraph(gap) {
+            const card = document.getElementById('graphVisualizerCard');
+            if (!card || !gap) return;
+            card.classList.remove('hidden');
+
+            const container = document.getElementById('graphCanvasWrapper');
+            const width = container.clientWidth || 1100;
+            const height = 620;
+
+            const targetRole = gap.targetRole || currentRole || 'Software Engineer';
+            const nextSkillName = gap.recommendedNextSkill ? gap.recommendedNextSkill.name.toLowerCase() : '';
+            const knownNames = (gap.knownSkills || []).map(s => s.name.toLowerCase());
+            const prereqNames = (gap.missingPrerequisites || []).map(s => s.name.toLowerCase());
+
+            let rawNodes = [];
+            let rawLinks = [];
+
+            if (gap.graphData && gap.graphData.nodes && gap.graphData.links) {
+                rawNodes = JSON.parse(JSON.stringify(gap.graphData.nodes));
+                rawLinks = JSON.parse(JSON.stringify(gap.graphData.links));
+            } else {
+                const userNodeId = 'person_candidate';
+                const roleNodeId = 'role_' + targetRole.replace(/\s+/g, '_');
+                rawNodes.push({ id: userNodeId, label: 'Candidate (You)', type: 'Person', group: 'user', radius: 36 });
+                rawNodes.push({ id: roleNodeId, label: targetRole, type: 'JobRole', group: 'role', radius: 42 });
+                rawLinks.push({ source: userNodeId, target: roleNodeId, type: 'TARGETS', label: 'TARGETS' });
+
+                const allSkills = [...(gap.allRequiredSkills || []), ...(gap.missingPrerequisites || [])];
+                const seenSkills = new Set();
+                allSkills.forEach(s => {
+                    const lName = s.name.toLowerCase();
+                    if (seenSkills.has(lName)) return;
+                    seenSkills.add(lName);
+
+                    const sId = 'skill_' + s.name.replace(/\s+/g, '_');
+                    let group = 'missing';
+                    if (lName === nextSkillName) group = 'next';
+                    else if (knownNames.includes(lName)) group = 'known';
+                    else if (prereqNames.includes(lName)) group = 'prereq';
+
+                    rawNodes.push({
+                        id: sId,
+                        label: s.name,
+                        type: 'Skill',
+                        group,
+                        category: s.category || 'Core',
+                        difficulty: s.difficulty || 'Intermediate',
+                        radius: group === 'next' ? 36 : group === 'known' ? 32 : 28
+                    });
+
+                    if (group === 'known') {
+                        rawLinks.push({ source: userNodeId, target: sId, type: 'HAS_SKILL', label: 'HAS_SKILL' });
+                    }
+                    rawLinks.push({ source: roleNodeId, target: sId, type: 'REQUIRES', label: 'REQUIRES' });
+
+                    if (Array.isArray(s.prerequisites)) {
+                        s.prerequisites.forEach(p => {
+                            const pName = typeof p === 'string' ? p : p.name;
+                            if (pName) {
+                                const pId = 'skill_' + pName.replace(/\s+/g, '_');
+                                if (!seenSkills.has(pName.toLowerCase())) {
+                                    seenSkills.add(pName.toLowerCase());
+                                    const isPKnown = knownNames.includes(pName.toLowerCase());
+                                    rawNodes.push({
+                                        id: pId,
+                                        label: pName,
+                                        type: 'Skill',
+                                        group: isPKnown ? 'known' : 'prereq',
+                                        category: 'Prerequisite',
+                                        radius: 28
+                                    });
+                                    if (isPKnown) {
+                                        rawLinks.push({ source: userNodeId, target: pId, type: 'HAS_SKILL', label: 'HAS_SKILL' });
+                                    }
+                                }
+                                rawLinks.push({ source: sId, target: pId, type: 'DEPENDS_ON', label: 'DEPENDS_ON' });
+                            }
+                        });
+                    }
+                });
+            }
+
+            currentGraphData = { nodes: rawNodes, links: rawLinks };
+
+            const cypherQuery = gap.graphData?.cypherQuery || `// Neo4j Live Cypher Traversal for ${targetRole}
+MATCH (candidate:Person {id: $userId})
+MATCH (target:JobRole {name: "${targetRole}"})
+OPTIONAL MATCH (candidate)-[has:HAS_SKILL]->(known:Skill)
+MATCH (target)-[req:REQUIRES]->(required:Skill)
+OPTIONAL MATCH (required)-[dep:DEPENDS_ON*1..2]->(prereq:Skill)
+OPTIONAL MATCH (required)-[taught:TAUGHT_BY]->(res:LearningResource)
+RETURN candidate, target, has, known, req, required, dep, prereq, taught, res;`;
+
+            const cypherTab = document.getElementById('graphCypherTab');
+            if (cypherTab) {
+                cypherTab.innerHTML = `
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-700">
+                        <div>
+                            <span class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500 rounded-full font-bold text-xs uppercase mb-1">
+                                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+                                ${escapeHTML(gap.dataSource || 'Neo4j Aura Live')}
+                            </span>
+                            <h3 class="text-xl font-black text-white uppercase italic tracking-wider mt-1">Generated Cypher Query</h3>
+                        </div>
+                        <button onclick="copyCypherToClipboard()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl uppercase transition-all shadow-[3px_3px_0px_#000]">
+                            Copy Cypher
+                        </button>
+                    </div>
+                    <pre class="bg-black/60 p-6 rounded-2xl border border-gray-800 text-emerald-300 leading-relaxed font-mono text-xs overflow-x-auto selection:bg-emerald-500 selection:text-black">${escapeHTML(cypherQuery)}</pre>
+                    <div class="mt-4 p-4 bg-gray-900 border border-gray-800 rounded-xl text-[11px] text-gray-400 font-sans">
+                        ⚡ <strong>Neo4j Graph Pattern:</strong> <code class="text-emerald-400 font-mono">(Person)-[:TARGETS]->(JobRole)</code>, <code class="text-emerald-400 font-mono">(JobRole)-[:REQUIRES]->(Skill)</code>, <code class="text-emerald-400 font-mono">(Skill)-[:DEPENDS_ON]->(Skill)</code>, <code class="text-emerald-400 font-mono">(Skill)-[:TAUGHT_BY]->(LearningResource)</code>.
+                    </div>
+                `;
+            }
+
+            if (!window.d3) {
+                console.warn('D3.js not available yet, retrying...');
+                setTimeout(() => renderPersonalizedKnowledgeGraph(gap), 300);
+                return;
+            }
+
+            const svg = d3.select('#interactiveGraphSvg');
+            currentGraphSvg = svg;
+            svg.selectAll('*').remove();
+
+            svg.attr('viewBox', [0, 0, width, height]);
+
+            const defs = svg.append('defs');
+            const arrowTypes = [
+                { id: 'arrow-targets', color: '#000000' },
+                { id: 'arrow-has-skill', color: '#10b981' },
+                { id: 'arrow-requires', color: '#2563eb' },
+                { id: 'arrow-depends-on', color: '#9333ea' },
+                { id: 'arrow-taught-by', color: '#0d9488' }
+            ];
+
+            arrowTypes.forEach(a => {
+                defs.append('marker')
+                    .attr('id', a.id)
+                    .attr('viewBox', '0 -5 10 10')
+                    .attr('refX', 28)
+                    .attr('refY', 0)
+                    .attr('markerWidth', 7)
+                    .attr('markerHeight', 7)
+                    .attr('orient', 'auto')
+                    .append('path')
+                    .attr('d', 'M0,-5L10,0L0,5')
+                    .attr('fill', a.color);
+            });
+
+            defs.append('pattern')
+                .attr('id', 'graph-grid')
+                .attr('width', 40)
+                .attr('height', 40)
+                .attr('patternUnits', 'userSpaceOnUse')
+                .append('circle')
+                .attr('cx', 20)
+                .attr('cy', 20)
+                .attr('r', 1)
+                .attr('fill', '#e2e8f0');
+
+            svg.append('rect')
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .attr('fill', 'url(#graph-grid)');
+
+            const g = svg.append('g').attr('class', 'graph-main-group');
+
+            const zoom = d3.zoom()
+                .scaleExtent([0.3, 3])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+            currentGraphZoom = zoom;
+            svg.call(zoom);
+
+            const simulation = d3.forceSimulation(rawNodes)
+                .force('link', d3.forceLink(rawLinks).id(d => d.id).distance(d => {
+                    if (d.type === 'TARGETS') return 160;
+                    if (d.type === 'REQUIRES') return 130;
+                    if (d.type === 'DEPENDS_ON') return 100;
+                    return 80;
+                }))
+                .force('charge', d3.forceManyBody().strength(-450))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => (d.radius || 28) + 20));
+
+            currentGraphSimulation = simulation;
+
+            const linkGroup = g.append('g').attr('class', 'links');
+            const link = linkGroup.selectAll('line')
+                .data(rawLinks)
+                .join('line')
+                .attr('class', 'graph-link')
+                .attr('stroke', d => {
+                    if (d.type === 'TARGETS') return '#000000';
+                    if (d.type === 'HAS_SKILL') return '#10b981';
+                    if (d.type === 'REQUIRES') return '#2563eb';
+                    if (d.type === 'DEPENDS_ON') return '#9333ea';
+                    return '#0d9488';
+                })
+                .attr('stroke-width', d => d.type === 'TARGETS' ? 3.5 : 2.5)
+                .attr('stroke-dasharray', d => d.type === 'TARGETS' ? '6,6' : null)
+                .attr('marker-end', d => `url(#arrow-${d.type.toLowerCase().replace(/_/g, '-')})`);
+
+            const edgeLabelGroup = g.append('g').attr('class', 'edge-labels');
+            const edgeLabel = edgeLabelGroup.selectAll('text')
+                .data(rawLinks)
+                .join('text')
+                .attr('class', 'edge-label select-none pointer-events-none')
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '8px')
+                .attr('font-weight', '900')
+                .attr('font-family', 'Inter, sans-serif')
+                .attr('fill', d => {
+                    if (d.type === 'TARGETS') return '#000';
+                    if (d.type === 'HAS_SKILL') return '#047857';
+                    if (d.type === 'REQUIRES') return '#1d4ed8';
+                    if (d.type === 'DEPENDS_ON') return '#7e22ce';
+                    return '#0f766e';
+                })
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', '3px')
+                .attr('paint-order', 'stroke')
+                .text(d => `[:${d.type}]`);
+
+            const nodeGroup = g.append('g').attr('class', 'nodes');
+            const node = nodeGroup.selectAll('g')
+                .data(rawNodes)
+                .join('g')
+                .attr('class', 'graph-node')
+                .call(d3.drag()
+                    .on('start', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    })
+                    .on('drag', (event, d) => {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    })
+                    .on('end', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null;
+                    })
+                );
+
+            node.filter(d => d.group === 'next')
+                .append('circle')
+                .attr('r', d => d.radius + 8)
+                .attr('class', 'pulse-ring')
+                .attr('fill', 'none')
+                .attr('stroke', '#f59e0b')
+                .attr('stroke-width', 3.5);
+
+            node.append('circle')
+                .attr('r', d => d.radius)
+                .attr('fill', d => {
+                    if (d.group === 'user') return '#000000';
+                    if (d.group === 'role') return '#ffe57f';
+                    if (d.group === 'known') return '#10b981';
+                    if (d.group === 'next') return '#f59e0b';
+                    if (d.group === 'prereq') return '#9333ea';
+                    if (d.group === 'resource') return '#0d9488';
+                    return '#2563eb';
+                })
+                .attr('stroke', '#000000')
+                .attr('stroke-width', '3.5px')
+                .style('filter', 'drop-shadow(3px 3px 0px #000)');
+
+            node.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'central')
+                .attr('font-size', d => d.group === 'role' ? '20px' : d.group === 'user' ? '18px' : '15px')
+                .attr('fill', d => (d.group === 'role' || d.group === 'next') ? '#000000' : '#ffffff')
+                .text(d => {
+                    if (d.group === 'user') return '👤';
+                    if (d.group === 'role') return '🎯';
+                    if (d.group === 'known') return '✔';
+                    if (d.group === 'next') return '⚡';
+                    if (d.group === 'prereq') return '⚠';
+                    if (d.group === 'resource') return '📚';
+                    return '✦';
+                });
+
+            const labelGroup = node.append('g').attr('transform', d => `translate(0, ${d.radius + 14})`);
+
+            labelGroup.append('rect')
+                .attr('x', d => -(d.label.length * 3.8 + 8))
+                .attr('y', -8)
+                .attr('width', d => d.label.length * 7.6 + 16)
+                .attr('height', 16)
+                .attr('rx', 5)
+                .attr('ry', 5)
+                .attr('fill', '#ffffff')
+                .attr('stroke', '#000000')
+                .attr('stroke-width', '2px')
+                .style('filter', 'drop-shadow(2px 2px 0px #000)');
+
+            labelGroup.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'central')
+                .attr('font-size', '10px')
+                .attr('font-weight', '900')
+                .attr('font-family', 'Inter, sans-serif')
+                .attr('fill', '#000000')
+                .text(d => d.label);
+
+            const tooltip = document.getElementById('graphTooltip');
+            node.on('mouseenter', (event, d) => {
+                const connectedNodeIds = new Set([d.id]);
+                rawLinks.forEach(l => {
+                    const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                    if (sId === d.id) connectedNodeIds.add(tId);
+                    if (tId === d.id) connectedNodeIds.add(sId);
+                });
+
+                node.classed('dimmed', n => !connectedNodeIds.has(n.id));
+                link.classed('dimmed', l => {
+                    const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                    return !(sId === d.id || tId === d.id);
+                });
+
+                if (tooltip) {
+                    const typeLabels = {
+                        user: 'Candidate Profile (Person)',
+                        role: 'Target Goal (JobRole)',
+                        known: 'Mastered Skill (HAS_SKILL)',
+                        next: '⚡ Recommended Next Priority',
+                        prereq: '⚠ Missing Prerequisite',
+                        missing: 'Required Core Skill',
+                        resource: 'Learning Resource (TAUGHT_BY)'
+                    };
+                    tooltip.innerHTML = `
+                        <div class="font-black text-xs uppercase tracking-wider text-blue-600 mb-1">${typeLabels[d.group] || d.type}</div>
+                        <div class="font-black text-sm text-black mb-1">${escapeHTML(d.label)}</div>
+                        ${d.category ? `<div class="text-[10px] text-gray-500 font-bold">Category: ${escapeHTML(d.category)}</div>` : ''}
+                        ${d.difficulty ? `<div class="text-[10px] text-gray-500 font-bold">Difficulty: ${escapeHTML(d.difficulty)}</div>` : ''}
+                        ${d.url ? `<div class="text-[10px] text-teal-600 font-bold mt-1">Click to open external resource ↗</div>` : ''}
+                        ${d.type === 'Skill' ? `<div class="text-[10px] text-gray-400 font-bold mt-1">Click to open study plan & resources</div>` : ''}
+                    `;
+                    tooltip.classList.remove('hidden');
+                    const rect = container.getBoundingClientRect();
+                    tooltip.style.left = `${Math.min(width - 240, Math.max(10, event.clientX - rect.left + 15))}px`;
+                    tooltip.style.top = `${Math.min(height - 120, Math.max(10, event.clientY - rect.top + 15))}px`;
+                }
+            });
+
+            node.on('mousemove', (event) => {
+                if (tooltip && !tooltip.classList.contains('hidden')) {
+                    const rect = container.getBoundingClientRect();
+                    tooltip.style.left = `${Math.min(width - 240, Math.max(10, event.clientX - rect.left + 15))}px`;
+                    tooltip.style.top = `${Math.min(height - 120, Math.max(10, event.clientY - rect.top + 15))}px`;
+                }
+            });
+
+            node.on('mouseleave', () => {
+                node.classed('dimmed', false);
+                link.classed('dimmed', false);
+                if (tooltip) tooltip.classList.add('hidden');
+            });
+
+            node.on('click', (event, d) => {
+                if (d.type === 'Skill') {
+                    openTopic(d.label, 0);
+                } else if (d.type === 'LearningResource' && d.url) {
+                    window.open(d.url, '_blank');
+                } else if (d.type === 'JobRole') {
+                    document.getElementById('skillGapSummaryCard')?.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                edgeLabel
+                    .attr('x', d => (d.source.x + d.target.x) / 2)
+                    .attr('y', d => (d.source.y + d.target.y) / 2);
+
+                node
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+        }
+
+        async function processRoadmap(role, skills = '') {
             currentRole = role;
             const content = document.getElementById('roadmapContent');
+            const summaryCard = document.getElementById('skillGapSummaryCard');
+            const graphCard = document.getElementById('graphVisualizerCard');
+            if (summaryCard) summaryCard.classList.add('hidden');
+            if (graphCard) graphCard.classList.add('hidden');
             
             // Switch view
             document.getElementById('mainView').classList.add('hidden');
@@ -1128,7 +1918,8 @@
             content.innerHTML = `
                 <div class="flex flex-col items-center py-40">
                     <div class="loading-spinner mb-10"></div>
-                    <p class="font-black text-4xl uppercase italic tracking-tighter">Architecting your ${role} path...</p>
+                    <p class="font-black text-4xl uppercase italic tracking-tighter">Querying Neo4j Career Graph for ${escapeHTML(role)}...</p>
+                    <p class="font-bold text-gray-500 mt-3 text-lg">Traversing prerequisite relationships & evaluating skill coverage...</p>
                 </div>
             `;
 
@@ -1136,23 +1927,230 @@
                 const res = await fetch('/api/generate-roadmap', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ role })
+                    body: JSON.stringify({ role, currentSkills: skills })
                 });
                 const data = await res.json();
                 currentPathData = data;
                 saveToCollection(role, data);
+                if (data.skillGap) {
+                    renderPersonalizedKnowledgeGraph(data.skillGap);
+                    renderSkillGapSummary(data.skillGap);
+                }
                 renderRoadmap(data);
             } catch (err) {
-                content.innerHTML = `<div class="text-center py-20"><p class="text-red-600 font-black text-3xl mb-4">ENGINE OFFLINE</p><p class="font-bold">Ensure server.js is running on port 3000.</p></div>`;
+                console.error(err);
+                content.innerHTML = `<div class="text-center py-20"><p class="text-red-600 font-black text-3xl mb-4">ENGINE OFFLINE</p><p class="font-bold">Ensure server is running on port 3001 or 4000.</p></div>`;
+            }
+        }
+
+        function renderSkillGapSummary(gap) {
+            const container = document.getElementById('skillGapSummaryCard');
+            if (!container || !gap) return;
+
+            const summary = gap.summary || {};
+            const coverage = summary.coveragePercent !== undefined ? summary.coveragePercent : 0;
+            const isLiveNeo4j = gap.mode === 'neo4j';
+
+            container.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b-4 border-black">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="inline-flex items-center gap-2 px-3 py-1 ${isLiveNeo4j ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} border-2 border-black rounded-full font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_#000]">
+                                <span class="w-2 h-2 ${isLiveNeo4j ? 'bg-green-600' : 'bg-blue-600'} rounded-full animate-ping"></span>
+                                ${escapeHTML(gap.dataSource || 'Neo4j Graph')}
+                            </span>
+                            <span class="text-xs font-black uppercase text-gray-400">Skill Gap Agent v2.0</span>
+                        </div>
+                        <h2 class="text-5xl font-black uppercase italic tracking-tighter">${escapeHTML(gap.targetRole)}</h2>
+                        <p class="text-gray-500 font-bold mt-1">Graph-derived evaluation of required proficiencies and prerequisite readiness.</p>
+                    </div>
+
+                    <!-- Coverage Metric Pill -->
+                    <div class="flex items-center gap-6 p-6 bg-gray-50 border-4 border-black rounded-3xl shadow-[6px_6px_0px_#000]">
+                        <div class="text-right">
+                            <span class="text-xs font-black uppercase tracking-widest text-gray-400 block">Graph Match</span>
+                            <span class="text-sm font-bold text-gray-600">${summary.knownSkillsCount || 0} of ${summary.totalRequiredSkills || 0} Core Skills</span>
+                        </div>
+                        <div class="w-24 h-24 rounded-full border-4 border-black bg-white flex flex-col items-center justify-center shadow-[4px_4px_0px_#000]">
+                            <span class="text-3xl font-black text-blue-600">${coverage}%</span>
+                            <span class="text-[9px] font-black uppercase text-gray-400">Match</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
+                    <div class="p-5 border-4 border-black rounded-2xl bg-white shadow-[4px_4px_0px_#000]">
+                        <span class="text-xs font-black uppercase text-gray-400 block mb-1">Required Skills</span>
+                        <span class="text-3xl font-black">${summary.totalRequiredSkills || 0}</span>
+                    </div>
+                    <div class="p-5 border-4 border-black rounded-2xl bg-green-50 shadow-[4px_4px_0px_#000]">
+                        <span class="text-xs font-black uppercase text-green-700 block mb-1">Verified Known</span>
+                        <span class="text-3xl font-black text-green-700">${summary.knownSkillsCount || 0}</span>
+                    </div>
+                    <div class="p-5 border-4 border-black rounded-2xl bg-amber-50 shadow-[4px_4px_0px_#000]">
+                        <span class="text-xs font-black uppercase text-amber-700 block mb-1">Needs Improvement</span>
+                        <span class="text-3xl font-black text-amber-700">${summary.improvingSkillsCount || 0}</span>
+                    </div>
+                    <div class="p-5 border-4 border-black rounded-2xl bg-red-50 shadow-[4px_4px_0px_#000]">
+                        <span class="text-xs font-black uppercase text-red-700 block mb-1">Missing Skills</span>
+                        <span class="text-3xl font-black text-red-700">${summary.missingSkillsCount || 0}</span>
+                    </div>
+                </div>
+
+                <!-- Recommended Next Skill Hero Box -->
+                ${gap.recommendedNextSkill ? `
+                <div class="p-6 bg-[#ffe57f] border-4 border-black rounded-3xl shadow-[8px_8px_0px_#000] mb-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="material-symbols-outlined text-xl">recommend</span>
+                                <span class="text-xs font-black uppercase tracking-wider text-black">Topological Next Skill Recommendation</span>
+                                ${gap.recommendedNextSkill.isPrerequisite ? '<span class="text-[10px] font-black uppercase bg-purple-600 text-white px-2 py-0.5 rounded">Prerequisite Priority</span>' : '<span class="text-[10px] font-black uppercase bg-black text-white px-2 py-0.5 rounded">Direct Goal</span>'}
+                            </div>
+                            <h3 class="text-3xl font-black uppercase tracking-tight">${escapeHTML(gap.recommendedNextSkill.name)}</h3>
+                            <p class="font-bold text-sm text-gray-800 mt-1 max-w-3xl">${escapeHTML(gap.recommendedNextSkill.reason)}</p>
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            ${gap.recommendedNextSkill.resources && gap.recommendedNextSkill.resources.length > 0 ? `
+                            <a href="${gap.recommendedNextSkill.resources[0].url}" target="_blank" class="px-5 py-3 bg-white border-3 border-black rounded-xl font-black text-xs uppercase hover:bg-gray-100 shadow-[3px_3px_0px_#000] active:translate-y-0.5 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">open_in_new</span> ${escapeHTML(gap.recommendedNextSkill.resources[0].title || 'Resource')}
+                            </a>` : ''}
+                            <button onclick="markSkillAsMastered('${escapeHTML(gap.recommendedNextSkill.name)}')" class="px-5 py-3 bg-black text-white border-3 border-black rounded-xl font-black text-xs uppercase hover:bg-gray-800 shadow-[3px_3px_0px_#3b82f6] active:translate-y-0.5 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm text-green-400">check_circle</span> Mark Mastered
+                            </button>
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <!-- Skill Comparison Matrix -->
+                <div class="space-y-6 pt-4 border-t-4 border-black">
+                    <h4 class="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                        <span class="material-symbols-outlined">compare_arrows</span> Skill Gap Comparison
+                    </h4>
+
+                    <!-- Missing Prerequisites (if any) -->
+                    ${gap.missingPrerequisites && gap.missingPrerequisites.length > 0 ? `
+                    <div>
+                        <div class="text-xs font-black uppercase tracking-widest text-purple-600 mb-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">warning</span> Missing Foundational Prerequisites (${gap.missingPrerequisites.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${gap.missingPrerequisites.map(p => `
+                                <div class="p-3 bg-purple-50 border-2 border-purple-900 rounded-xl flex items-center gap-3 shadow-[2px_2px_0px_#000]">
+                                    <div>
+                                        <span class="font-black text-sm block">${escapeHTML(p.name)}</span>
+                                        <span class="text-[11px] font-bold text-purple-700">Blocks: ${escapeHTML(p.forSkill)}</span>
+                                    </div>
+                                    <button onclick="markSkillAsMastered('${escapeHTML(p.name)}')" class="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-purple-200" title="Mark Mastered">
+                                        <span class="material-symbols-outlined text-sm text-green-600">done</span>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <!-- Missing Skills -->
+                    ${gap.missingSkills && gap.missingSkills.length > 0 ? `
+                    <div>
+                        <div class="text-xs font-black uppercase tracking-widest text-red-600 mb-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">cancel</span> Missing Target Skills (${gap.missingSkills.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${gap.missingSkills.map(s => `
+                                <div class="px-3 py-2 bg-red-50 border-2 border-black rounded-xl flex items-center gap-2 shadow-[2px_2px_0px_#000]">
+                                    <span class="font-black text-sm">${escapeHTML(s.name)}</span>
+                                    <span class="text-[10px] font-black uppercase bg-red-200 px-1.5 py-0.5 rounded">${s.importance || 'core'}</span>
+                                    <button onclick="markSkillAsMastered('${escapeHTML(s.name)}')" class="p-1 bg-white border border-black rounded hover:bg-green-100" title="Mark Mastered">
+                                        <span class="material-symbols-outlined text-xs text-green-600">done</span>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <!-- Skills Needing Improvement -->
+                    ${gap.improvingSkills && gap.improvingSkills.length > 0 ? `
+                    <div>
+                        <div class="text-xs font-black uppercase tracking-widest text-amber-600 mb-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">trending_up</span> Needs Improvement to Meet Target (${gap.improvingSkills.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${gap.improvingSkills.map(s => `
+                                <div class="px-3 py-2 bg-amber-50 border-2 border-black rounded-xl flex items-center gap-2 shadow-[2px_2px_0px_#000]">
+                                    <span class="font-black text-sm">${escapeHTML(s.name)}</span>
+                                    <span class="text-[10px] font-bold text-amber-800">Current: ${s.currentProficiency} → Min: ${s.requiredProficiency}</span>
+                                    <button onclick="markSkillAsMastered('${escapeHTML(s.name)}')" class="p-1 bg-white border border-black rounded hover:bg-green-100" title="Mark Mastered">
+                                        <span class="material-symbols-outlined text-xs text-green-600">done</span>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <!-- Verified Known Skills -->
+                    ${gap.knownSkills && gap.knownSkills.length > 0 ? `
+                    <div>
+                        <div class="text-xs font-black uppercase tracking-widest text-green-700 mb-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">check_circle</span> Verified Existing Skills (${gap.knownSkills.length})
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${gap.knownSkills.map(s => `
+                                <div class="px-3 py-2 bg-green-50 border-2 border-black rounded-xl flex items-center gap-2 shadow-[2px_2px_0px_#000]">
+                                    <span class="material-symbols-outlined text-sm text-green-600">check_circle</span>
+                                    <span class="font-black text-sm">${escapeHTML(s.name)}</span>
+                                    <span class="text-[10px] font-black uppercase bg-green-200 px-1.5 py-0.5 rounded">${s.proficiency || 'verified'}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+                </div>
+            `;
+
+            container.classList.remove('hidden');
+        }
+
+        async function markSkillAsMastered(skillName) {
+            try {
+                const res = await fetch('/api/complete-skill', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ role: currentRole, skillName })
+                });
+                const updatedGap = await res.json();
+                
+                // Add to skillsInput
+                const skillsEl = document.getElementById('skillsInput');
+                if (skillsEl) {
+                    const currentVals = skillsEl.value.split(',').map(s => s.trim()).filter(Boolean);
+                    if (!currentVals.some(v => v.toLowerCase().includes(skillName.toLowerCase()))) {
+                        currentVals.push(`${skillName}: Advanced`);
+                        skillsEl.value = currentVals.join(', ');
+                    }
+                }
+
+                // Re-render Graph & Skill Gap Summary with updated metrics
+                renderPersonalizedKnowledgeGraph(updatedGap);
+                renderSkillGapSummary(updatedGap);
+                if (currentPathData) {
+                    currentPathData.skillGap = updatedGap;
+                    renderRoadmap(currentPathData);
+                }
+            } catch (e) {
+                console.error('Error completing skill:', e);
             }
         }
 
         function renderRoadmap(data) {
             const container = document.getElementById('roadmapContent');
+            const gap = data.skillGap;
+            const knownNames = gap && gap.knownSkills ? gap.knownSkills.map(s => s.name.toLowerCase()) : [];
+            const prereqNames = gap && gap.missingPrerequisites ? gap.missingPrerequisites.map(s => s.name.toLowerCase()) : [];
+
             container.innerHTML = `
-                <div class="text-center mb-32">
-                    <h2 class="text-7xl font-black uppercase italic tracking-tighter roadmap-title">${currentRole}</h2>
-                    <p class="text-blue-600 font-black uppercase tracking-[0.5em] mt-4">Verified Professional Path</p>
+                <div class="text-center mb-24">
+                    <h2 class="text-7xl font-black uppercase italic tracking-tighter roadmap-title">${escapeHTML(currentRole)}</h2>
+                    <p class="text-blue-600 font-black uppercase tracking-[0.5em] mt-4">Neo4j Verified Knowledge Path</p>
                 </div>
                 <div class="roadmap-container">
                     <div class="central-line"></div>
@@ -1166,54 +2164,127 @@
                 const node = document.createElement('div');
                 node.className = `flex items-center w-full ${isEven ? 'flex-row' : 'flex-row-reverse'}`;
                 
-                const isCompleted = localStorage.getItem(`pf_v1_${currentRole}_phase_${i}`) === 'true';
+                const isCompleted = localStorage.getItem(`pf_v1_${currentRole}_phase_${i}`) === 'true' ||
+                    (phase.subtopics && phase.subtopics.length > 0 && phase.subtopics.every(st => knownNames.includes(st.toLowerCase())));
                 
-node.innerHTML = `
+                node.innerHTML = `
                      <div class="w-1/2 flex ${isEven ? 'justify-end pr-20' : 'justify-start pl-20'}">
-                         <div class="topic-box ${isCompleted ? 'completed' : ''}">
+                         <div class="topic-box ${isCompleted ? 'completed' : ''}" style="${isCompleted ? 'background:#ecfdf5;border-color:#10b981;' : ''}">
                              <div class="flex items-center gap-4">
                                  <span class="text-xs bg-black text-white px-2 py-1 rounded">PHASE ${i+1}</span>
                                  <span>${escapeHTML(phase.title)}</span>
-                                 ${isCompleted ? '<span class="material-symbols-outlined text-green-500">check_circle</span>' : ''}
+                                 ${isCompleted ? '<span class="material-symbols-outlined text-green-500 font-black">check_circle</span>' : ''}
                              </div>
+                             ${phase.description ? `<p class="text-xs font-normal text-gray-600 mt-2 text-left">${escapeHTML(phase.description)}</p>` : ''}
                          </div>
                      </div>
                      <div class="w-0 relative">
-                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black border-4 border-blue-600 rounded-full z-20 shadow-[0_0_20px_rgba(37,99,235,0.4)]"></div>
+                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black border-4 ${isCompleted ? 'border-green-500 bg-green-100' : 'border-blue-600'} rounded-full z-20 shadow-[0_0_20px_rgba(37,99,235,0.4)]"></div>
                      </div>
                      <div class="w-1/2 ${isEven ? 'pl-20' : 'pr-20'} flex flex-wrap gap-4 ${isEven ? 'justify-start' : 'justify-end'}">
-                         ${phase.subtopics.map(st => `<div class="subtopic-box">${escapeHTML(st)}</div>`).join('')}
+                         ${(phase.subtopics || []).map(st => {
+                             const isKnown = knownNames.includes(st.toLowerCase());
+                             const isPrereq = prereqNames.includes(st.toLowerCase());
+                             let badgeClass = 'subtopic-box';
+                             let icon = '';
+                             if (isKnown) {
+                                 badgeClass += ' bg-green-50 border-green-600 text-green-900 shadow-[4px_4px_0px_#10b981]';
+                                 icon = '<span class="material-symbols-outlined text-xs text-green-600 font-black mr-1">check</span>';
+                             } else if (isPrereq) {
+                                 badgeClass += ' bg-purple-50 border-purple-800 text-purple-900 shadow-[4px_4px_0px_#7e22ce]';
+                                 icon = '<span class="material-symbols-outlined text-xs text-purple-700 font-black mr-1">priority_high</span>';
+                             }
+                             return `<div class="${badgeClass} flex items-center cursor-pointer">${icon}${escapeHTML(st)}</div>`;
+                         }).join('')}
                      </div>
                  `;
                  nodes.appendChild(node);
                  node.querySelector('.topic-box').addEventListener('click', () => openTopic(phase.title, i));
                  node.querySelectorAll('.subtopic-box').forEach(btn => {
-                     const st = btn.innerText;
-                     btn.addEventListener('click', () => askTutorAbout(st));
+                     const st = btn.innerText.replace(/check|priority_high/, '').trim();
+                     btn.addEventListener('click', () => openTopic(st, i));
                  });
              });
              updateMasteryAnalytics();
              updateProgressUI();
-         }
+        }
 
         // --- Feature Interactions ---
         function openTopic(title, index) {
             document.getElementById('sidebarTitle').innerText = title;
             const resources = document.getElementById('resourceLinks');
-            resources.innerHTML = `
-                <a href="https://www.google.com/search?q=${encodeURIComponent(title)}+tutorials" target="_blank" class="block p-5 border-4 border-black rounded-2xl font-black hover:bg-yellow-50 transition-all flex justify-between items-center">
-                    <span>Google Best Practices</span>
-                    <span class="material-symbols-outlined">open_in_new</span>
+            
+            // Search for graph resources
+            let graphResources = [];
+            let skillDetails = null;
+            if (currentPathData && currentPathData.skillGap) {
+                const gap = currentPathData.skillGap;
+                const foundSkill = (gap.allRequiredSkills || []).find(s => s.name.toLowerCase() === title.toLowerCase()) ||
+                                   (gap.missingPrerequisites || []).find(s => s.name.toLowerCase() === title.toLowerCase());
+                if (foundSkill) {
+                    skillDetails = foundSkill;
+                    if (foundSkill.resources && foundSkill.resources.length > 0) {
+                        graphResources = foundSkill.resources;
+                    }
+                }
+            }
+
+            let html = '';
+            if (skillDetails) {
+                html += `
+                    <div class="p-4 bg-blue-50 border-4 border-black rounded-2xl mb-6 text-xs font-bold shadow-[4px_4px_0px_#000]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[10px] font-black uppercase text-blue-600">Category: ${escapeHTML(skillDetails.category || 'Core')}</span>
+                            <span class="text-[10px] font-black uppercase bg-black text-white px-2 py-0.5 rounded">${escapeHTML(skillDetails.difficulty || 'Intermediate')}</span>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed">${escapeHTML(skillDetails.description || 'Essential competence derived from Neo4j knowledge graph.')}</p>
+                        ${skillDetails.prerequisites && skillDetails.prerequisites.length > 0 ? `
+                        <div class="mt-3 p-2 bg-purple-50 border-2 border-purple-800 rounded-xl text-[11px] text-purple-900">
+                            <strong>Graph Prerequisites:</strong> ${skillDetails.prerequisites.map(p => typeof p === 'string' ? p : p.name).join(', ')}
+                        </div>` : ''}
+                        <button onclick="markSkillAsMastered('${escapeHTML(title)}')" class="mt-4 w-full py-3 bg-green-600 text-white border-3 border-black rounded-xl font-black text-xs hover:bg-green-700 uppercase flex items-center justify-center gap-2 shadow-[3px_3px_0px_#000] active:translate-y-0.5">
+                            <span class="material-symbols-outlined text-sm">check_circle</span> Mark Skill Mastered in Graph
+                        </button>
+                    </div>
+                `;
+            }
+
+            if (graphResources.length > 0) {
+                html += `<div class="text-xs font-black uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">menu_book</span> Curated Graph Learning Resources</div>`;
+                graphResources.forEach(res => {
+                    html += `
+                        <a href="${res.url}" target="_blank" class="block p-4 border-4 border-black rounded-2xl font-black bg-yellow-50 hover:bg-yellow-100 transition-all flex justify-between items-center mb-3 shadow-[4px_4px_0px_#000]">
+                            <div>
+                                <span class="text-sm block">${escapeHTML(res.title)}</span>
+                                <span class="text-[11px] font-bold text-gray-500">${escapeHTML(res.provider || 'Resource')} • ${escapeHTML(res.type || 'Course')}</span>
+                            </div>
+                            <span class="material-symbols-outlined">open_in_new</span>
+                        </a>
+                    `;
+                });
+            }
+
+            // General Web Deep Dives
+            html += `
+                <a href="https://www.google.com/search?q=${encodeURIComponent(title)}+tutorials" target="_blank" class="block p-4 border-3 border-black rounded-xl font-black hover:bg-gray-50 transition-all flex justify-between items-center mb-2 shadow-[2px_2px_0px_#000]">
+                    <span class="text-sm">Google Technical Guide</span>
+                    <span class="material-symbols-outlined text-sm">search</span>
                 </a>
-                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(title)}+course" target="_blank" class="block p-5 border-4 border-black rounded-2xl font-black hover:bg-blue-50 transition-all flex justify-between items-center">
-                    <span>Video Deep Dive</span>
-                    <span class="material-symbols-outlined">play_circle</span>
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(title)}+course" target="_blank" class="block p-4 border-3 border-black rounded-xl font-black hover:bg-red-50 transition-all flex justify-between items-center shadow-[2px_2px_0px_#000]">
+                    <span class="text-sm">Video Deep Dive</span>
+                    <span class="material-symbols-outlined text-sm text-red-600">play_circle</span>
                 </a>
             `;
-            
-            const studyBtn = document.querySelector('#studyPlan button');
-            if(studyBtn) {
-                studyBtn.onclick = () => generateStudyPlan(title);
+
+            resources.innerHTML = html;
+
+            const studyPlanContainer = document.getElementById('studyPlan');
+            if (studyPlanContainer) {
+                studyPlanContainer.innerHTML = `
+                    <button onclick="generateStudyPlan('${escapeHTML(title)}')" class="w-full py-6 bg-blue-600 text-white border-4 border-black rounded-2xl font-black text-xl hover:bg-blue-700 shadow-[8px_8px_0px_#000] active:shadow-none active:translate-y-1 transition-all">
+                        BUILD 5-DAY PLAN
+                    </button>
+                `;
             }
             
             document.getElementById('topicSidebar').classList.add('open');
@@ -1225,30 +2296,71 @@ node.innerHTML = `
             document.getElementById('overlay').classList.remove('open');
         }
 
+        function renderStudyPlanMarkdown(md) {
+            if (!md) return '';
+            return md
+                .replace(/^### (.*$)/gim, '<h4 class="font-black text-blue-600 mt-4 mb-1 text-sm uppercase tracking-wider">$1</h4>')
+                .replace(/^## (.*$)/gim, '<h3 class="font-black text-black mt-4 mb-2 text-base border-b-2 border-black pb-1">$1</h3>')
+                .replace(/^# (.*$)/gim, '<h2 class="font-black text-black mt-4 mb-2 text-lg">$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\s*[-•]\s+(.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/\n/g, '<br>');
+        }
+
         async function generateStudyPlan(topic) {
-            const btn = document.querySelector('#studyPlan button');
-            if(!btn) return;
-            btn.innerHTML = `<div class="loading-spinner scale-50 mx-auto"></div>`;
+            const targetTopic = topic || document.getElementById('sidebarTitle')?.innerText || currentRole || 'Core Skills';
+            const container = document.getElementById('studyPlan');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="p-6 bg-blue-50 border-4 border-black rounded-2xl text-center shadow-[4px_4px_0px_#000]">
+                    <div class="loading-spinner scale-75 mx-auto mb-3"></div>
+                    <p class="font-black text-sm uppercase tracking-wider">Building 5-Day Plan for ${escapeHTML(targetTopic)}...</p>
+                    <p class="text-xs text-gray-500 font-bold mt-1">Analyzing prerequisites & graph knowledge</p>
+                </div>
+            `;
             
             try {
                 const res = await fetch('/api/tutor-query', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
-                        query: `Create a 5-day study plan for the topic: ${topic}. Format it as Day 1, Day 2, etc.`,
+                        query: `Create a 5-day study plan for the topic: ${targetTopic}. Format it as Day 1, Day 2, etc.`,
+                        topic: targetTopic,
                         role: currentRole
                     })
                 });
+
+                if (!res.ok) {
+                    throw new Error(`Server returned ${res.status}`);
+                }
+
                 const data = await res.json();
-                document.getElementById('studyPlan').innerHTML = `
-                    <div class="p-6 bg-gray-50 border-4 border-black rounded-2xl font-bold text-sm leading-relaxed max-h-[400px] overflow-y-auto">
-                        ${data.answer.replace(/\n/g, '<br>')}
+                if (!data || !data.answer) {
+                    throw new Error("No plan content received");
+                }
+
+                const formatted = renderStudyPlanMarkdown(data.answer);
+
+                container.innerHTML = `
+                    <div class="p-5 bg-yellow-50 border-4 border-black rounded-2xl font-medium text-xs leading-relaxed max-h-[420px] overflow-y-auto shadow-[4px_4px_0px_#000]">
+                        ${formatted}
                     </div>
-                    <button onclick="addToVault('${topic} Plan', '#')" class="mt-4 w-full py-3 border-2 border-black rounded-xl font-black text-xs hover:bg-black hover:text-white transition-all uppercase">Save to Vault</button>
+                    <button onclick="addToVault('${escapeHTML(targetTopic)} Plan', '#')" class="mt-4 w-full py-3 bg-white border-3 border-black rounded-xl font-black text-xs hover:bg-black hover:text-white transition-all uppercase shadow-[3px_3px_0px_#000] active:translate-y-0.5 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">bookmark</span> Save to Vault
+                    </button>
                 `;
-                addToVault(`${topic} Study Plan`, "#");
+                addToVault(`${targetTopic} Study Plan`, "#");
             } catch (err) {
-                btn.innerText = "ERROR - TRY AGAIN";
+                console.error("Study plan generation error:", err);
+                container.innerHTML = `
+                    <div class="p-4 bg-red-100 border-4 border-black rounded-xl text-center mb-3">
+                        <p class="font-black text-xs text-red-700">Failed to generate plan. Please try again.</p>
+                    </div>
+                    <button onclick="generateStudyPlan('${escapeHTML(targetTopic)}')" class="w-full py-4 bg-yellow-400 text-black border-4 border-black rounded-xl font-black text-sm hover:bg-yellow-500 shadow-[4px_4px_0px_#000] active:translate-y-0.5">
+                        RETRY 5-DAY PLAN
+                    </button>
+                `;
             }
         }
 
@@ -2505,6 +3617,143 @@ node.innerHTML = `
                     link.click();
                 });
             };
+        }
+    </script>
+
+    <!-- Clerk Auth Integration -->
+    <script>
+        let clerkInstance = null;
+        const CLERK_FRONTEND_API = 'https://pleasing-monitor-4510.clerk.accounts.dev';
+        const CLERK_PK = 'pk_test_cGxlYXNpbmctbW9uaXRvci00NTEwLmNsZXJrLmFjY291bnRzLmRldiQ';
+
+        async function ensureClerkLoaded(maxWaitMs = 2000) {
+            if (window.Clerk && window.Clerk.loaded) return window.Clerk;
+            if (window.Clerk) {
+                try {
+                    await window.Clerk.load({ publishableKey: CLERK_PK });
+                    return window.Clerk;
+                } catch (e) {
+                    console.warn("Clerk load error:", e);
+                }
+            }
+            const start = Date.now();
+            return new Promise((resolve) => {
+                const interval = setInterval(async () => {
+                    if (window.Clerk) {
+                        clearInterval(interval);
+                        try {
+                            if (!window.Clerk.loaded) {
+                                await window.Clerk.load({ publishableKey: CLERK_PK });
+                            }
+                        } catch (e) {
+                            console.warn("Clerk load interval error:", e);
+                        }
+                        resolve(window.Clerk);
+                    } else if (Date.now() - start > maxWaitMs) {
+                        clearInterval(interval);
+                        resolve(null);
+                    }
+                }, 80);
+            });
+        }
+
+        async function initClerkAuth() {
+            renderAuthControls();
+            try {
+                const clerk = await ensureClerkLoaded(2500);
+                if (clerk) {
+                    clerkInstance = clerk;
+                    renderAuthControls();
+                    clerk.addListener(() => {
+                        renderAuthControls();
+                    });
+                }
+            } catch (err) {
+                console.warn('Clerk initialization fallback:', err);
+            }
+            renderAuthControls();
+        }
+
+        function renderAuthControls() {
+            const signedOutEl = document.getElementById('signedOutControls');
+            const signedInEl = document.getElementById('signedInControls');
+            const userBtnContainer = document.getElementById('clerkUserButton');
+
+            const clerk = window.Clerk || clerkInstance;
+            if (!clerk || !clerk.user) {
+                if (signedOutEl) signedOutEl.classList.remove('hidden');
+                if (signedInEl) signedInEl.classList.add('hidden');
+                return;
+            }
+
+            if (signedOutEl) signedOutEl.classList.add('hidden');
+            if (signedInEl) signedInEl.classList.remove('hidden');
+            if (userBtnContainer) {
+                userBtnContainer.innerHTML = '';
+                try {
+                    clerk.mountUserButton(userBtnContainer);
+                } catch (e) {
+                    console.warn("mountUserButton error:", e);
+                }
+            }
+        }
+
+        async function handleSignIn() {
+            const btn = document.getElementById('signInBtn');
+            const orig = btn ? btn.innerHTML : '';
+            if (btn) btn.innerHTML = `<span class="material-symbols-outlined text-base animate-spin">refresh</span> CONNECTING...`;
+
+            try {
+                const clerk = await ensureClerkLoaded(1500);
+                if (clerk) {
+                    clerkInstance = clerk;
+                    renderAuthControls();
+                    clerk.openSignIn();
+                    if (btn) btn.innerHTML = orig;
+                    return;
+                }
+            } catch (e) {
+                console.warn('openSignIn error:', e);
+            }
+
+            if (btn) btn.innerHTML = orig;
+            const currentUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+            window.location.href = `${CLERK_FRONTEND_API}/sign-in?redirect_url=${currentUrl}&after_sign_in_url=${currentUrl}`;
+        }
+
+        async function handleSignUp() {
+            const btn = document.getElementById('signUpBtn');
+            const orig = btn ? btn.innerHTML : '';
+            if (btn) btn.innerHTML = `<span class="material-symbols-outlined text-base animate-spin">refresh</span> CONNECTING...`;
+
+            try {
+                const clerk = await ensureClerkLoaded(1500);
+                if (clerk) {
+                    clerkInstance = clerk;
+                    renderAuthControls();
+                    clerk.openSignUp();
+                    if (btn) btn.innerHTML = orig;
+                    return;
+                }
+            } catch (e) {
+                console.warn('openSignUp error:', e);
+            }
+
+            if (btn) btn.innerHTML = orig;
+            const currentUrl = encodeURIComponent(window.location.origin + window.location.pathname);
+            window.location.href = `${CLERK_FRONTEND_API}/sign-up?redirect_url=${currentUrl}&after_sign_up_url=${currentUrl}`;
+        }
+
+        function initAppBoot() {
+            initClerkAuth();
+            checkNeo4jStatus();
+            updateSkillSuggestions('Java Backend Developer');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAppBoot);
+        } else {
+            initAppBoot();
         }
     </script>
 </body>
